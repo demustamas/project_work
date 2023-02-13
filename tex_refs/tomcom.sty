@@ -1,0 +1,56 @@
+% Page layout
+\usepackage[
+    a4paper,
+    margin=1in
+]{geometry}
+
+% Language support
+\usepackage{t1enc}
+\usepackage[
+    english
+]{babel}
+\usepackage{csquotes}
+
+% Bibliography, refs, citations
+\usepackage[
+    sorting=none,
+    backend=biber,
+    style=numeric
+]{biblatex}
+
+% Headers and footers
+\usepackage{lastpage}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+
+\fancyhf{}
+\fancyhead[R]{\leftmark}
+\fancyhead[L]{PROJECT GUIDELINE}
+\fancyfoot[R]{\thepage\ / \pageref*{LastPage}}
+
+% Version history
+\usepackage[
+    tablegrid
+]{vhistory}
+
+% Special math representation (matrix, etc.)
+\usepackage{amsmath}
+\usepackage{amsfonts}
+
+% Hyperrefs
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+}
+
+% Software code
+\usepackage{listings}
+\lstset{
+    language=Python,
+    basicstyle={\color{blue}}
+}
+
+% Figures
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
