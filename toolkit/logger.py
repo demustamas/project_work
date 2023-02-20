@@ -41,14 +41,11 @@ class Logger:
             )
 
             fmt_console = colorlog.ColoredFormatter(
-                "%(asctime)s |"
-                "%(log_color)s%(levelname)-10s%(reset)s |"
-                "%(blue)s%(name)-40s:%(lineno)5s:%(funcName)-25s%(reset)s |"
-                "%(log_color)s%(message)s%(reset)s"
+                "[ {log_color}{levelname:^10s}{reset} ] {message:s}", style="{"
             )
             fmt_text_logger = logging.Formatter(
                 "%(asctime)s |"
-                "%(levelname)-8s |"
+                "%(levelname)-10s |"
                 "%(name)-40s:%(lineno)5s:%(funcName)-25s |"
                 "%(message)s"
             )
@@ -61,7 +58,7 @@ class Logger:
                 "%(message)s"
             )
 
-            console.addFilter(lambda record: record.levelno >= logging.WARNING)
+            console.addFilter(lambda record: record.levelno >= logging.INFO)
 
             console.setFormatter(fmt_console)
             text_logger.setFormatter(fmt_text_logger)

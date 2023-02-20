@@ -8,14 +8,18 @@ import re
 import gc
 
 
-class DataFrameCreator:
+class DataFrameCreator(dict):
     logger.debug(f"INIT: {__qualname__}")
 
     def __init__(self):
-        self.columns = ["path", "filename", "file", "type", "category"]
-        self.train = pd.DataFrame(columns=self.columns)
-        self.validation = pd.DataFrame(columns=self.columns)
-        self.test = pd.DataFrame(columns=self.columns)
+        self.columns = ["path", "filename", "file", "type", "category", "cat_idx"]
+        self.update(
+            {
+                "train": pd.DataFrame(columns=self.columns),
+                "validation": pd.DataFrame(columns=self.columns),
+                "test": pd.DataFrame(columns=self.columns),
+            }
+        )
 
     def __del__(self):
         logger.debug(f"DESTRUCT: {__name__}")
@@ -32,7 +36,7 @@ class DataFrameCreator:
                             {
                                 "path": [data_file.parent],
                                 "filename": [data_file.name],
-                                "file": [data_file],
+                                "file": [str(data_file)],
                                 "type": [data_type],
                                 "category": [str(data_file.parts[-2])],
                             }
@@ -47,21 +51,13 @@ class DataFrameCreator:
                         logger.warning(f"Directory found under category: {data_file}")
             else:
                 logger.warning(f"File found in folder: {category}")
-
+        df["category"] = df["category"].astype("category")
+        df["cat_idx"] = df["category"].cat.codes.astype("float32")
         df.reset_index(inplace=True, drop=True)
 
-        if data_type == "training":
-            self.train = df.copy()
-        elif data_type == "train":
-            self.train = df.copy()
-        elif data_type == "validation":
-            self.validation = df.copy()
-        elif data_type == "test":
-            self.test = df.copy()
-        else:
-            logger.error("No such data type given!")
+        self.update({data_type: df.copy()})
 
-        logger.info(f"DataFrame created from {folder} as {data_type} data.")
+        logger.info(f"DataFrame created from {folder} as {data_type} data")
 
     def load_dataset(self, root):
         self.root = Path(root)
@@ -73,23 +69,16 @@ class DataFrameCreator:
                 self.from_folder(data_type, type_name)
             else:
                 logger.warning(f"File found in folder: {data_type}")
-        logger.info(f"Dataset loaded from {self.root} folder.")
+        logger.info(f"Dataset loaded from {self.root} folder")
 
     def info(self):
-        datasets = {
-            "train": self.train,
-            "validation": self.validation,
-            "test": self.test,
-        }
-
-        for k, v in datasets.items():
-            print(f"Name :          {k}")
-            print(f"Type:           {*v.type.unique(),}")
-            print(f"Columns:        {*v.columns,}")
-            print(f"Shape:          {v.shape}")
-            print(f"Categories:     {*v.category.unique(),}")
-            print(f"Path:           {*v.path.unique(),}")
-            print(
+        for k, v in self.items():
+            logger.info(f"Name :          {k}")
+            logger.info(f"Type:           {*v.type.unique(),}")
+            logger.info(f"Columns:        {*v.columns,}")
+            logger.info(f"Shape:          {v.shape}")
+            logger.info(f"Categories:     {*v.category.unique(),}")
+            logger.info(f"Path:           {*v.path.unique(),}")
+            logger.info(
                 f"File types:     {*v.filename.apply(lambda x: str(x).split('.')[-1]).unique(),}"
             )
-            print("")
