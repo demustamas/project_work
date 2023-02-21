@@ -7,6 +7,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+import multiprocessing
+
 import torch.cuda as cuda
 
 from torch.utils.data import Dataset
@@ -60,8 +62,8 @@ class CustomImageDataLoader(dict):
         dataset: dict,
         image_col: str,
         label_col: str,
-        transform: Iterable[Callable] = None,
-        target_transform: Iterable[Callable] = None,
+        transform: dict = None,
+        target_transform: dict = None,
     ) -> None:
         for k, v in dataset.items():
             self.update(
@@ -69,16 +71,20 @@ class CustomImageDataLoader(dict):
                     f"{k}_data": CustomImageDataSet(
                         v[image_col],
                         v[label_col],
-                        transform=transform,
-                        target_transform=target_transform,
+                        transform=transform.get(k),
+                        target_transform=target_transform.get(k),
                     )
                 }
             )
         logger.info("CustomImageDataSet created")
 
     def create_dataloaders(self, batch_size: int) -> None:
+        num_workers: int = multiprocessing.cpu_count()
+        logger.info(f"Setting dataloader subprocesses to {num_workers}")
         tmp_dict: dict = {
-            k.split("_")[0]: DataLoader(v, batch_size=batch_size, shuffle=True)
+            k.split("_")[0]: DataLoader(
+                v, batch_size=batch_size, shuffle=True, num_workers=num_workers
+            )
             for k, v in self.items()
         }
         self.update(tmp_dict)
@@ -220,7 +226,8 @@ class NeuralNetwork(nn.Module):
 
                 res_epoch["loss"].loc[epoch] += loss.item()
                 res_epoch["accuracy"].loc[epoch] += (
-                    BinaryAccuracy()(squeeze(outputs).to("cpu"), labels.to("cpu"))
+                    BinaryAccuracy()
+                    .to(self.dev)(squeeze(outputs).to(self.dev), labels.to(self.dev))
                     .detach()
                     .cpu()
                     .numpy()
@@ -239,7 +246,10 @@ class NeuralNetwork(nn.Module):
 
                     res_epoch["validation_loss"].loc[epoch] += loss.item()
                     res_epoch["validation_acc"].loc[epoch] += (
-                        BinaryAccuracy()(squeeze(outputs).to("cpu"), labels.to("cpu"))
+                        BinaryAccuracy()
+                        .to(self.dev)(
+                            squeeze(outputs).to(self.dev), labels.to(self.dev)
+                        )
                         .detach()
                         .cpu()
                         .numpy()
