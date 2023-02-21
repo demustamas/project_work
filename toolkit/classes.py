@@ -7,12 +7,21 @@ from pathlib import Path
 import re
 import gc
 
+from typing import List
+
 
 class DataFrameCreator(dict):
     logger.debug(f"INIT: {__qualname__}")
 
-    def __init__(self):
-        self.columns = ["path", "filename", "file", "type", "category", "cat_idx"]
+    def __init__(self) -> None:
+        self.columns: List[str] = [
+            "path",
+            "filename",
+            "file",
+            "type",
+            "category",
+            "cat_idx",
+        ]
         self.update(
             {
                 "train": pd.DataFrame(columns=self.columns),
@@ -21,13 +30,13 @@ class DataFrameCreator(dict):
             }
         )
 
-    def __del__(self):
+    def __del__(self) -> None:
         logger.debug(f"DESTRUCT: {__name__}")
         gc.collect()
 
-    def from_folder(self, folder, data_type):
-        df = pd.DataFrame(columns=self.columns)
-        folder = Path(f"./{folder}")
+    def from_folder(self, folder: str, data_type: str) -> None:
+        df: pd.DataFrame = pd.DataFrame(columns=self.columns)
+        folder: Path = Path(f"./{folder}")
         for category in folder.iterdir():
             if category.is_dir():
                 for data_file in category.iterdir():
@@ -59,8 +68,8 @@ class DataFrameCreator(dict):
 
         logger.info(f"DataFrame created from {folder} as {data_type} data")
 
-    def load_dataset(self, root):
-        self.root = Path(root)
+    def load_dataset(self, root: str) -> None:
+        self.root: Path = Path(root)
         for data_type in self.root.iterdir():
             if data_type.is_dir():
                 type_name = re.sub(
@@ -71,7 +80,7 @@ class DataFrameCreator(dict):
                 logger.warning(f"File found in folder: {data_type}")
         logger.info(f"Dataset loaded from {self.root} folder")
 
-    def info(self):
+    def info(self) -> None:
         for k, v in self.items():
             logger.info(f"Name :          {k}")
             logger.info(f"Type:           {*v.type.unique(),}")

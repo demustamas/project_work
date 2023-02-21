@@ -8,24 +8,22 @@ import gc
 
 
 class Logger:
-    def __init__(self, logger_name):
+    """Add logging function to project.
+
+    It creates a colored console log and a file log.
+    Add the following code to your main module and each module that is imported into your project:
+        from toolkit.logger import Logger
+
+        logger = Logger(__name__).get_logger()
+    """
+
+    def __init__(self, logger_name: str) -> None:
         self.name = logger_name
 
-    def __del__(self):
+    def __del__(self) -> None:
         gc.collect()
 
-    def get_logger(self):
-        """Add logging function to project.
-
-        It creates a console log and a file log.
-
-        Args:
-            logger_name (str): Name of the logger, recommended to use __name__ to trace the module structure
-
-        Returns:
-            Logger object: Configured logger class
-        """
-
+    def get_logger(self) -> logging.Logger:
         try:
             self.logger = logging.getLogger(self.name)
 

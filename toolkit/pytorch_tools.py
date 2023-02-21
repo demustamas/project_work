@@ -3,6 +3,9 @@ from toolkit.logger import Logger
 logger = Logger(__name__).get_logger()
 
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 import torch.cuda as cuda
 
@@ -12,26 +15,34 @@ from torchvision.io import read_image
 
 from torch import nn
 from torch import squeeze
+from torch import Tensor
 from torch.optim import Adam
 
 from torchmetrics.classification import BinaryAccuracy
 
 import gc
+from typing import Iterable, Callable, Tuple
 
 
 class CustomImageDataSet(Dataset):
     logger.debug(f"INIT: {__qualname__}")
 
-    def __init__(self, images, labels, transform=None, target_transform=None):
+    def __init__(
+        self,
+        images: Iterable[str],
+        labels: Iterable[np.float32],
+        transform: Iterable[Callable] = None,
+        target_transform: Iterable[Callable] = None,
+    ):
         self.images = images
         self.labels = labels
         self.transform = transform
         self.target_transform = target_transform
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.labels)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx) -> Tuple[Tensor, np.float32]:
         image = read_image(self.images.loc[idx])
         label = self.labels.loc[idx]
         if self.transform:
@@ -45,8 +56,13 @@ class CustomImageDataLoader(dict):
     logger.debug(f"INIT: {__qualname__}")
 
     def __init__(
-        self, dataset, image_col, label_col, transform=None, target_transform=None
-    ):
+        self,
+        dataset: dict,
+        image_col: str,
+        label_col: str,
+        transform: Iterable[Callable] = None,
+        target_transform: Iterable[Callable] = None,
+    ) -> None:
         for k, v in dataset.items():
             self.update(
                 {
@@ -60,8 +76,8 @@ class CustomImageDataLoader(dict):
             )
         logger.info("CustomImageDataSet created")
 
-    def create_dataloaders(self, batch_size):
-        tmp_dict = {
+    def create_dataloaders(self, batch_size: int) -> None:
+        tmp_dict: dict = {
             k.split("_")[0]: DataLoader(v, batch_size=batch_size, shuffle=True)
             for k, v in self.items()
         }
@@ -72,20 +88,53 @@ class CustomImageDataLoader(dict):
 class ModelResults:
     logger.debug(f"INIT: {__qualname__}")
 
-    def __init__(self):
-        self.data = pd.DataFrame(
+    def __init__(self, name: str) -> None:
+        self.data: pd.DataFrame = pd.DataFrame(
             columns=["loss", "accuracy", "validation_loss", "validation_acc"]
         )
+        self.name = name
 
-    def plot():
-        pass
+    def plot(self) -> None:
+        fig: plt.Figure
+        ax: plt.Axes
+        fig, ax = plt.subplots(1, 2, figsize=(15, 5), dpi=400)
+        sns.lineplot(
+            data=self.data,
+            x=self.data.index,
+            y="loss",
+            label="Train loss",
+            ax=ax[0],
+        )
+        sns.lineplot(
+            data=self.data,
+            x=self.data.index,
+            y="validation_loss",
+            label="Validation loss",
+            ax=ax[0],
+        )
+        sns.lineplot(
+            data=self.data,
+            x=self.data.index,
+            y="accuracy",
+            label="Train accuracy",
+            ax=ax[1],
+        )
+        sns.lineplot(
+            data=self.data,
+            x=self.data.index,
+            y="validation_acc",
+            label="Validation accuracy",
+            ax=ax[1],
+        )
+        fig.savefig(f"./tex_images/{self.name}_results.png")
 
 
 class NeuralNetwork(nn.Module):
     logger.debug(f"INIT: {__qualname__}")
 
-    def __init__(self):
+    def __init__(self, name: str) -> None:
         super(NeuralNetwork, self).__init__()
+        self.name = name
         self.layers = nn.Sequential(
             nn.Conv2d(3, 96, kernel_size=11, stride=4, padding=0),
             nn.ReLU(),
@@ -110,16 +159,17 @@ class NeuralNetwork(nn.Module):
             nn.Linear(4096, 1),
         )
         self.loss = nn.BCELoss()
-        self.optimizer = Adam(self.layers.parameters(), lr=1e-4)
-        self.dev = None
-        self.results = ModelResults()
+        self.optimizer = Adam(self.layers.parameters(), lr=5e-6)
+        self.dev: str = None
+        self.results = ModelResults(name=self.name)
+        logger.info(f"Neural Network consutructed: {self.name}")
         logger.info(self)
 
-    def forward(self, x):
-        x = self.layers(x)
-        return nn.Sigmoid()(x)
+    def forward(self, x: Tensor) -> Tensor:
+        out = self.layers(x)
+        return nn.Sigmoid()(out)
 
-    def init_device(self, device="auto"):
+    def init_device(self, device: str = "auto") -> None:
         logger.info("Setting up CUDA device")
         if device == "auto":
             if cuda.is_available():
@@ -136,10 +186,21 @@ class NeuralNetwork(nn.Module):
         self.to(self.dev)
         logger.info(f"Model loaded to device: {cuda.get_device_name(self.dev)}")
 
-    def train(self, epochs, train_loader, validation_loader=None):
+    def clean_up(self, variables: Iterable = None) -> None:
+        for variable in variables:
+            del variable
+        gc.collect()
+        cuda.empty_cache()
+
+    def train(
+        self,
+        epochs: int,
+        train_loader: DataLoader,
+        validation_loader: DataLoader = None,
+    ) -> None:
         logger.info("Model training started")
         for epoch in range(epochs):
-            res_epoch = pd.DataFrame(
+            res_epoch: pd.DataFrame = pd.DataFrame(
                 data={
                     "loss": 0.0,
                     "accuracy": 0.0,
@@ -165,9 +226,7 @@ class NeuralNetwork(nn.Module):
                     .numpy()
                 )
 
-                del outputs, loss
-                gc.collect()
-                cuda.empty_cache()
+                self.clean_up([loss, outputs])
 
             res_epoch["loss"].loc[epoch] /= len(train_loader)
             res_epoch["accuracy"].loc[epoch] /= len(train_loader)
@@ -185,6 +244,8 @@ class NeuralNetwork(nn.Module):
                         .cpu()
                         .numpy()
                     )
+
+                self.clean_up([loss, outputs])
 
             res_epoch["validation_loss"].loc[epoch] /= len(validation_loader)
             res_epoch["validation_acc"].loc[epoch] /= len(validation_loader)
