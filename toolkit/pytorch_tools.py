@@ -7,6 +7,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+from jupyter_dash import JupyterDash
+from dash import Dash
+from dash import html
+from dash import dcc
+import plotly.express as px
+
+from pathlib import Path
+from datetime import datetime
+
 import multiprocessing
 
 import torch.cuda as cuda
@@ -99,6 +108,23 @@ class ModelResults:
             columns=["loss", "accuracy", "validation_loss", "validation_acc"]
         )
         self.name = name
+        self.path = Path(f"./results/{self.name}/")
+        self.update_filename()
+        if self.path.exists():
+            logger.debug(f"Folder exists: {self.path}")
+        else:
+            self.path.mkdir(parents=True)
+            logger.info(f"Folder created: {self.path}")
+
+    def save_data(self) -> None:
+        self.data.to_csv(self.filename)
+        logger.info(f"Results saved to: {self.filename}")
+
+    def update_filename(self, filename: str = None) -> None:
+        self.filename = filename or (
+            self.path / f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        )
+        logger.info(f"Results filename: {self.filename}")
 
     def plot(self) -> None:
         fig: plt.Figure
@@ -108,31 +134,56 @@ class ModelResults:
             data=self.data,
             x=self.data.index,
             y="loss",
-            label="Train loss",
+            label="Train",
             ax=ax[0],
         )
         sns.lineplot(
             data=self.data,
             x=self.data.index,
             y="validation_loss",
-            label="Validation loss",
+            label="Validation",
             ax=ax[0],
         )
         sns.lineplot(
             data=self.data,
             x=self.data.index,
             y="accuracy",
-            label="Train accuracy",
+            label="Train",
             ax=ax[1],
         )
         sns.lineplot(
             data=self.data,
             x=self.data.index,
             y="validation_acc",
-            label="Validation accuracy",
+            label="Validation",
             ax=ax[1],
         )
         fig.savefig(f"./tex_images/{self.name}_results.png")
+
+    def create_dashboard(self) -> None:
+        self.app = JupyterDash(__name__)
+        template = "plotly_dark"
+        fig_loss = px.line(
+            data_frame=self.data,
+            x=self.data.index,
+            y=["loss", "validation_loss"],
+            temaplte=template,
+        )
+        fig_acc = px.line(
+            data_frame=self.data,
+            x=self.data.index,
+            y=["accuracy", "validation_acc"],
+            temaplte=template,
+        )
+        self.app.layout = html.Div(
+            children=[
+                html.H1(children="Railway Track Fault Detection"),
+                html.H2(children="Loss functions"),
+                dcc.Graph(id="loss", figure=fig_loss),
+                html.H2(children="Accuracy functions"),
+                dcc.Graph(id="loss", figure=fig_acc),
+            ]
+        )
 
 
 class NeuralNetwork(nn.Module):
@@ -168,7 +219,8 @@ class NeuralNetwork(nn.Module):
         self.optimizer = Adam(self.layers.parameters(), lr=5e-6)
         self.dev: str = None
         self.results = ModelResults(name=self.name)
-        logger.info(f"Neural Network consutructed: {self.name}")
+
+        logger.info(f"Neural Network constructed: {self.name}")
         logger.info(self)
 
     def forward(self, x: Tensor) -> Tensor:
@@ -205,6 +257,7 @@ class NeuralNetwork(nn.Module):
         validation_loader: DataLoader = None,
     ) -> None:
         logger.info("Model training started")
+        binary_accuracy = BinaryAccuracy().to(self.dev)
         for epoch in range(epochs):
             res_epoch: pd.DataFrame = pd.DataFrame(
                 data={
@@ -226,8 +279,7 @@ class NeuralNetwork(nn.Module):
 
                 res_epoch["loss"].loc[epoch] += loss.item()
                 res_epoch["accuracy"].loc[epoch] += (
-                    BinaryAccuracy()
-                    .to(self.dev)(squeeze(outputs).to(self.dev), labels.to(self.dev))
+                    binary_accuracy(squeeze(outputs).to(self.dev), labels.to(self.dev))
                     .detach()
                     .cpu()
                     .numpy()
@@ -246,8 +298,7 @@ class NeuralNetwork(nn.Module):
 
                     res_epoch["validation_loss"].loc[epoch] += loss.item()
                     res_epoch["validation_acc"].loc[epoch] += (
-                        BinaryAccuracy()
-                        .to(self.dev)(
+                        binary_accuracy(
                             squeeze(outputs).to(self.dev), labels.to(self.dev)
                         )
                         .detach()
