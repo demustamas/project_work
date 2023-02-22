@@ -167,13 +167,13 @@ class ModelResults:
             data_frame=self.data,
             x=self.data.index,
             y=["loss", "validation_loss"],
-            temaplte=template,
+            template=template,
         )
         fig_acc = px.line(
             data_frame=self.data,
             x=self.data.index,
             y=["accuracy", "validation_acc"],
-            temaplte=template,
+            template=template,
         )
         self.app.layout = html.Div(
             children=[
