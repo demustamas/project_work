@@ -1,6 +1,6 @@
 from toolkit.logger import Logger
 
-logger = Logger(__name__).get_logger()
+logger = Logger("classes").get_logger()
 
 import pandas as pd
 from pathlib import Path

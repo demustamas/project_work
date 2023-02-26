@@ -1,6 +1,6 @@
 from toolkit.logger import Logger
 
-logger = Logger(__name__).get_logger()
+logger = Logger("pytorch_tools").get_logger()
 
 import pandas as pd
 import numpy as np
@@ -8,9 +8,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from jupyter_dash import JupyterDash
-from dash import Dash
 from dash import html
 from dash import dcc
+from dash import Input
+from dash import Output
 import plotly.express as px
 
 from pathlib import Path
@@ -27,6 +28,8 @@ from torchvision.io import read_image
 from torch import nn
 from torch import squeeze
 from torch import Tensor
+from torch import save
+from torch import load
 from torch.optim import Adam
 
 from torchmetrics.classification import BinaryAccuracy
@@ -103,28 +106,22 @@ class CustomImageDataLoader(dict):
 class ModelResults:
     logger.debug(f"INIT: {__qualname__}")
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, filename: Path) -> None:
         self.data: pd.DataFrame = pd.DataFrame(
-            columns=["loss", "accuracy", "validation_loss", "validation_acc"]
+            columns=["loss", "accuracy", "validation_loss", "validation_acc"],
         )
         self.name = name
-        self.path = Path(f"./results/{self.name}/")
-        self.update_filename()
-        if self.path.exists():
-            logger.debug(f"Folder exists: {self.path}")
-        else:
-            self.path.mkdir(parents=True)
-            logger.info(f"Folder created: {self.path}")
+        self.filename = filename.with_suffix(".csv")
+        self.dashboard: JupyterDash = None
+        logger.info(f"Results filename: {self.filename}")
 
     def save_data(self) -> None:
         self.data.to_csv(self.filename)
         logger.info(f"Results saved to: {self.filename}")
 
-    def update_filename(self, filename: str = None) -> None:
-        self.filename = filename or (
-            self.path / f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-        )
-        logger.info(f"Results filename: {self.filename}")
+    def load_data(self, filename: str) -> None:
+        self.data = pd.read_csv(filename)
+        logger.info(f"Results loaded from {filename}")
 
     def plot(self) -> None:
         fig: plt.Figure
@@ -160,30 +157,61 @@ class ModelResults:
         )
         fig.savefig(f"./tex_images/{self.name}_results.png")
 
-    def create_dashboard(self) -> None:
-        self.app = JupyterDash(__name__)
-        template = "plotly_dark"
-        fig_loss = px.line(
-            data_frame=self.data,
-            x=self.data.index,
-            y=["loss", "validation_loss"],
-            template=template,
+    def create_dashboard(self, interval) -> None:
+        self.dashboard = JupyterDash(
+            __name__,
+            title="Railway Track Fault Detection",
         )
-        fig_acc = px.line(
-            data_frame=self.data,
-            x=self.data.index,
-            y=["accuracy", "validation_acc"],
-            template=template,
-        )
-        self.app.layout = html.Div(
+        self.dashboard.layout = html.Div(
             children=[
                 html.H1(children="Railway Track Fault Detection"),
                 html.H2(children="Loss functions"),
-                dcc.Graph(id="loss", figure=fig_loss),
+                dcc.Graph(id="loss"),
                 html.H2(children="Accuracy functions"),
-                dcc.Graph(id="loss", figure=fig_acc),
+                dcc.Graph(id="acc"),
+                dcc.Interval(
+                    id="auto-updater",
+                    interval=interval * 1000,
+                    n_intervals=1,
+                    max_intervals=-1,
+                ),
             ]
         )
+        self.dashboard.callback(
+            Output("loss", "figure"),
+            Output("acc", "figure"),
+            Input("auto-updater", "n_intervals"),
+        )(self.update_figures)
+
+        logger.info("Dashboard created")
+
+    def update_figures(self, _):
+        if self.data.empty:
+            df = pd.DataFrame.from_dict(
+                data={
+                    "loss": [0],
+                    "accuracy": [0],
+                    "validation_loss": [0],
+                    "validation_acc": [0],
+                }
+            )
+        else:
+            df = self.data
+        template = "plotly_dark"
+        fig_loss = px.line(
+            data_frame=df,
+            x=df.index,
+            y=["loss", "validation_loss"],
+            template=template,
+        )
+
+        fig_acc = px.line(
+            data_frame=df,
+            x=df.index,
+            y=["accuracy", "validation_acc"],
+            template=template,
+        )
+        return fig_loss, fig_acc
 
 
 class NeuralNetwork(nn.Module):
@@ -218,10 +246,23 @@ class NeuralNetwork(nn.Module):
         self.loss = nn.BCELoss()
         self.optimizer = Adam(self.layers.parameters(), lr=5e-6)
         self.dev: str = None
-        self.results = ModelResults(name=self.name)
+        self.path = Path(f"./results/{self.name}/")
+        if self.path.exists():
+            logger.debug(f"Folder exists: {self.path}")
+        else:
+            self.path.mkdir(parents=True)
+            logger.info(f"Folder created: {self.path}")
+        self.update_filename()
+        self.results = ModelResults(name=self.name, filename=self.filename)
 
         logger.info(f"Neural Network constructed: {self.name}")
         logger.info(self)
+
+    def update_filename(self, filename: Path = None) -> None:
+        self.filename = filename or (
+            self.path / f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.pth"
+        )
+        logger.info(f"Model filename: {self.filename}")
 
     def forward(self, x: Tensor) -> Tensor:
         out = self.layers(x)
@@ -268,9 +309,10 @@ class NeuralNetwork(nn.Module):
                 },
                 index=[epoch],
             )
-
+            self.callback_before_epoch()
             for inputs, labels in train_loader:
                 inputs, labels = inputs.to(self.dev), labels.to(self.dev)
+                self.callback_before_batch()
                 outputs = self(inputs)
                 loss = self.loss(squeeze(outputs), labels)
                 self.optimizer.zero_grad()
@@ -284,7 +326,7 @@ class NeuralNetwork(nn.Module):
                     .cpu()
                     .numpy()
                 )
-
+                self.callback_after_batch()
                 self.clean_up([loss, outputs])
 
             res_epoch["loss"].loc[epoch] /= len(train_loader)
@@ -312,6 +354,7 @@ class NeuralNetwork(nn.Module):
             res_epoch["validation_acc"].loc[epoch] /= len(validation_loader)
 
             self.results.data = pd.concat([self.results.data, res_epoch])
+            self.callback_after_epoch()
 
             logger.info(
                 f"Epoch: {epoch:4d} "
@@ -320,3 +363,39 @@ class NeuralNetwork(nn.Module):
                 f"Validation loss: {res_epoch['validation_loss'][epoch]:7.4f}   "
                 f"Validation accuracy: {res_epoch['validation_acc'][epoch]:7.4f}"
             )
+
+    def callback_before_epoch(self) -> None:
+        pass
+
+    def callback_after_epoch(self) -> None:
+        pass
+
+    def callback_before_batch(self) -> None:
+        pass
+
+    def callback_after_batch(self) -> None:
+        pass
+
+    def save_model(self, epoch: int = -1, loss: float = -1) -> None:
+        if epoch == -1 or loss == -1:
+            logger.warning("Epoch or Loss not given, model not saved!")
+        else:
+            save(
+                {
+                    "epoch": epoch,
+                    "model_state_dict": self.state_dict(),
+                    "optimizer_state_dict": self.optimizer.state_dict(),
+                    "loss": loss,
+                },
+                str(self.filename),
+            )
+            logger.info(f"Model saved to {self.filename}")
+
+    def load_model(self, model_file: str = None) -> None:
+        if model_file:
+            try:
+                checkpoint = load(model_file)
+            except Exception:
+                logger.warning(f"Model load unsuccessful: {model_file}")
+        else:
+            logger.warning("No model file given, model not loaded!")
