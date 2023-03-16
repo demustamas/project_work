@@ -2,7 +2,4 @@ logs/
 toolkit/__pycache__
 results/
 tex_refs/project_work.bib.sav
-data/raw/sd1_sample/UH_OBB_NOVEKVO_1_1_21_6_21.dat
-data/raw/sd1_sample/UH_OBB_NOVEKVO_1_1_21_6_21.idx
-data/raw/sd1_sample/UH_OBB_NOVEKVO_1_1_21_6_21.xml
-data/raw/sd1_sample/UH_OBB_NOVEKVO_1_1_21_6_21.xml_G_CHANNEL_01_KUP_122534.log
+data/
