@@ -44,12 +44,12 @@ class DataFrameCreator(dict):
                 if label_img.exists():
                     df = pd.DataFrame(
                         {
-                            "img_path": entity.parent,
-                            "img_filename": entity.name,
-                            "img": entity,
-                            "label_path": label_img.parent,
-                            "label_filename": label_img.name,
-                            "label": label_img,
+                            "img_path": str(entity.parent),
+                            "img_filename": str(entity.name),
+                            "img": str(entity),
+                            "label_path": str(label_img.parent),
+                            "label_filename": str(label_img.name),
+                            "label": str(label_img),
                             "type": "dataset",
                         },
                         index=[e],

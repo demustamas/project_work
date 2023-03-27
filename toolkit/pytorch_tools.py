@@ -19,6 +19,7 @@ from datetime import datetime
 
 import multiprocessing
 
+import torch
 import torch.cuda as cuda
 
 from torch.utils.data import Dataset
@@ -58,7 +59,7 @@ class CustomImageDataSet(Dataset):
 
     def __getitem__(self, idx) -> Tuple[Tensor, np.float32]:
         image = read_image(self.images.loc[idx])
-        label = self.labels.loc[idx]
+        label = read_image(self.labels.loc[idx])
         if self.transform:
             image = self.transform(image)
         if self.target_transform:
@@ -218,34 +219,92 @@ class ModelResults:
 class NeuralNetwork(nn.Module):
     logger.debug(f"INIT: {__qualname__}")
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name, num_classes: str) -> None:
         super(NeuralNetwork, self).__init__()
         self.name = name
-        self.layers = nn.Sequential(
-            nn.Conv2d(3, 96, kernel_size=11, stride=4, padding=0),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.Conv2d(96, 256, kernel_size=5, stride=1, padding=2),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.Conv2d(256, 384, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(384, 384, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(384, 256, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.Flatten(),
-            nn.Linear(9216, 4096),
-            nn.ReLU(),
-            nn.Dropout(p=0.5),
-            nn.Linear(4096, 4096),
-            nn.ReLU(),
-            nn.Dropout(p=0.5),
-            nn.Linear(4096, 1),
-        )
-        self.loss = nn.BCELoss()
-        self.optimizer = Adam(self.layers.parameters(), lr=5e-6)
+        self.num_classes = num_classes
+        if self.name == "AlexNet":
+
+            self.conv1 = nn.Sequential(
+                nn.Conv2d(
+                    in_channels=3,
+                    out_channels=96,
+                    kernel_size=11,
+                    stride=4,
+                    padding=100,
+                ),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=3, stride=2),
+                nn.LocalResponseNorm(size=5, alpha=1e-4, beta=0.75),
+            )
+
+            self.conv2 = nn.Sequential(
+                nn.Conv2d(
+                    in_channels=96, out_channels=256, kernel_size=5, padding=2, groups=2
+                ),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=3, stride=2),
+                nn.LocalResponseNorm(size=5, alpha=1e-4, beta=0.75),
+            )
+
+            self.conv3 = nn.Sequential(
+                nn.Conv2d(in_channels=256, out_channels=384, kernel_size=3, padding=1),
+                nn.ReLU(),
+            )
+
+            self.conv4 = nn.Sequential(
+                nn.Conv2d(
+                    in_channels=384,
+                    out_channels=384,
+                    kernel_size=3,
+                    padding=1,
+                    groups=2,
+                ),
+                nn.ReLU(),
+            )
+
+            self.conv5 = nn.Sequential(
+                nn.Conv2d(
+                    in_channels=384,
+                    out_channels=256,
+                    kernel_size=3,
+                    padding=1,
+                    groups=2,
+                ),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=3, stride=2),
+            )
+
+            self.conv6 = nn.Sequential(
+                nn.Conv2d(in_channels=256, out_channels=4096, kernel_size=6),
+                nn.ReLU(),
+                torch.nn.Dropout(p=0.5, inplace=True),
+            )
+
+            self.conv7 = nn.Sequential(
+                nn.Conv2d(in_channels=4096, out_channels=4096, kernel_size=1),
+                nn.ReLU(),
+                torch.nn.Dropout(p=0.5, inplace=True),
+            )
+
+            self.score_conv = nn.Conv2d(
+                in_channels=4096,
+                out_channels=self.num_classes,
+                kernel_size=1,
+                padding=0,
+            )
+            self.deconv = nn.ConvTranspose2d(
+                in_channels=self.num_classes,
+                out_channels=self.num_classes,
+                kernel_size=63,
+                stride=32,
+                bias=False,
+            )
+
+        else:
+            logger.error(f"Model name not known {self.name}")
+        self.loss = nn.CrossEntropyLoss()
+        self.optimizer = Adam(self.parameters(), lr=5e-6)
         self.dev: str = None
         self.path = Path(f"./results/{self.name}/")
         if self.path.exists():
@@ -266,8 +325,18 @@ class NeuralNetwork(nn.Module):
         logger.info(f"Model filename: {self.filename}")
 
     def forward(self, x: Tensor) -> Tensor:
-        out = self.layers(x)
-        return nn.Sigmoid()(out)
+        if self.name == "AlexNet":
+            y = self.conv1(x)
+            y = self.conv2(y)
+            y = self.conv3(y)
+            y = self.conv4(y)
+            y = self.conv5(y)
+            y = self.conv6(y)
+            y = self.conv7(y)
+            out = self.score_conv(y)
+            return self.deconv(out)
+        else:
+            logger.error(f"Model name not known: {self.name}")
 
     def init_device(self, device: str = "auto") -> None:
         logger.info("Setting up CUDA device")
@@ -277,14 +346,11 @@ class NeuralNetwork(nn.Module):
                 logger.info(f"CUDA set up to device: {cuda.get_device_name(self.dev)}")
             else:
                 self.dev = "cpu"
-                logger.warning(
-                    f"Failed to set up CUDA, using: {cuda.get_device_name(self.dev)}"
-                )
+                logger.warning(f"Failed to set up CUDA, using: {self.dev}")
         else:
             self.dev = device
             logger.warning(f"Device set manually to {self.dev}")
         self.to(self.dev)
-        logger.info(f"Model loaded to device: {cuda.get_device_name(self.dev)}")
 
     def clean_up(self, variables: Iterable = None) -> None:
         for variable in variables:
@@ -292,7 +358,7 @@ class NeuralNetwork(nn.Module):
         gc.collect()
         cuda.empty_cache()
 
-    def train(
+    def train_net(
         self,
         epochs: int,
         train_loader: DataLoader,
@@ -310,11 +376,10 @@ class NeuralNetwork(nn.Module):
                 },
                 index=[epoch],
             )
-            self.callback_before_epoch()
+            self.train()
             for inputs, labels in train_loader:
                 inputs, labels = inputs.to(self.dev), labels.to(self.dev)
-                self.callback_before_batch()
-                outputs = self(inputs)
+                outputs = self(inputs)[:,:,:224,:224]
                 loss = self.loss(squeeze(outputs), labels)
                 self.optimizer.zero_grad()
                 loss.backward()
@@ -327,17 +392,18 @@ class NeuralNetwork(nn.Module):
                     .cpu()
                     .numpy()
                 )
-                self.callback_after_batch()
                 self.clean_up([loss, outputs])
 
             res_epoch["loss"].loc[epoch] /= len(train_loader)
             res_epoch["accuracy"].loc[epoch] /= len(train_loader)
 
+            self.eval()
             if validation_loader:
                 for inputs, labels in validation_loader:
                     inputs, labels = inputs.to(self.dev), labels.to(self.dev)
-                    outputs = self(inputs)
-                    loss = self.loss(squeeze(outputs), labels)
+                    with torch.no_grad():
+                        outputs = self(inputs)
+                        loss = self.loss(squeeze(outputs), labels)
 
                     res_epoch["validation_loss"].loc[epoch] += loss.item()
                     res_epoch["validation_acc"].loc[epoch] += (
@@ -355,7 +421,6 @@ class NeuralNetwork(nn.Module):
             res_epoch["validation_acc"].loc[epoch] /= len(validation_loader)
 
             self.results.data = pd.concat([self.results.data, res_epoch])
-            self.callback_after_epoch()
 
             logger.info(
                 f"Epoch: {epoch:4d} "
@@ -364,18 +429,6 @@ class NeuralNetwork(nn.Module):
                 f"Validation loss: {res_epoch['validation_loss'][epoch]:7.4f}   "
                 f"Validation accuracy: {res_epoch['validation_acc'][epoch]:7.4f}"
             )
-
-    def callback_before_epoch(self) -> None:
-        pass
-
-    def callback_after_epoch(self) -> None:
-        pass
-
-    def callback_before_batch(self) -> None:
-        pass
-
-    def callback_after_batch(self) -> None:
-        pass
 
     def save_model(self, epoch: int = -1, loss: float = -1) -> None:
         if epoch == -1 or loss == -1:
