@@ -7,7 +7,7 @@ import pandas as pd
 from pathlib import Path
 import gc
 
-from typing import List
+from typing import List, Dict
 
 
 class DataFrameCreator(dict):
@@ -15,12 +15,11 @@ class DataFrameCreator(dict):
 
     def __init__(self) -> None:
         self.columns: List[str] = [
-            "img_path",
-            "img_filename",
+            "img_dir",
+            "img_file",
             "img",
-            "label_path",
-            "label_filename",
             "label",
+            "label_enc",
             "type",
         ]
         self.update(
@@ -36,35 +35,31 @@ class DataFrameCreator(dict):
         logger.debug(f"DESTRUCT: {__name__}")
         gc.collect()
 
-    def load_dataset(self, dataset: str, labels: str) -> None:
-        for e, entity in enumerate(Path(dataset).iterdir()):
-            if entity.is_file():
-                label_img = Path(labels) / entity.name
-
-                if label_img.exists():
+    def load_dataset(self, sample_dir: str, labels: Dict) -> None:
+        for label, encode in labels.items():
+            src = Path(sample_dir) / label
+            for e, entity in enumerate(src.iterdir()):
+                if entity.is_file():
                     df = pd.DataFrame(
                         {
-                            "img_path": str(entity.parent),
-                            "img_filename": str(entity.name),
+                            "img_dir": str(entity.parent),
+                            "img_file": str(entity.name),
                             "img": str(entity),
-                            "label_path": str(label_img.parent),
-                            "label_filename": str(label_img.name),
-                            "label": str(label_img),
+                            "label": str(label),
+                            "label_enc": int(encode),
                             "type": "dataset",
                         },
                         index=[e],
                     )
                     self["dataset"] = pd.concat([self["dataset"], df], axis=0)
+                elif entity.is_dir():
+                    logger.warning(f"Directory found: {entity}")
                 else:
-                    logger.warning(f"No label found for {entity}")
-            elif entity.is_dir():
-                logger.warning(f"Directory found: {entity}")
-            else:
-                logger.critical(f"Unknown entity type: {entity}")
-                raise TypeError(f"Unknown entity type: {entity}")
+                    logger.critical(f"Unknown entity type: {entity}")
+                    raise TypeError(f"Unknown entity type: {entity}")
+            logger.info(f"Images loaded from {sample_dir} with label {label}")
         self["dataset"].sort_values(by=["img"], inplace=True)
         self["dataset"].reset_index(drop=True, inplace=True)
-        logger.info(f"Dataset loaded from {dataset} with labels from {labels}")
 
     def split_dataset(self, val_rate: float = 0.2, test_rate: float = 0.1) -> None:
         idx = self["dataset"].index.to_list()
@@ -86,5 +81,5 @@ class DataFrameCreator(dict):
             logger.info(f"Columns:        {*v.columns,}")
             logger.info(f"Shape:          {v.shape}")
             logger.info(
-                f"File types:     {*v.img_filename.apply(lambda x: str(x).split('.')[-1]).unique(),}"
+                f"File types:     {*v.img_file.apply(lambda x: str(x).split('.')[-1]).unique(),}"
             )
