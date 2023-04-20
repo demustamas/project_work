@@ -25,7 +25,9 @@ import torch.cuda as cuda
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from torchvision.io import read_image
-from torchvision.models import vgg19, resnet50, efficientnet_v2_l
+from torchvision.models import vgg19
+from torchvision.models import resnet50
+from torchvision.models import efficientnet_v2_l
 from torchvision.transforms import Compose
 
 from torch import nn
@@ -38,7 +40,7 @@ from torch.optim import Adam
 from torchmetrics.classification import BinaryAccuracy
 
 import gc
-from typing import Iterable, Callable, Tuple
+from typing import Iterable, Callable, Tuple, Union
 
 
 class CustomImageDataSet(Dataset):
@@ -107,7 +109,7 @@ class CustomImageDataLoader(dict):
         logger.info("Dataloaders created")
 
 
-class NeuralNetwork(nn.Module):
+class Encoder(nn.Module):
     logger.debug(f"INIT: {__qualname__}")
     implemented_models = {
         "VGG19": vgg19,
@@ -115,20 +117,182 @@ class NeuralNetwork(nn.Module):
         "EfficientNetV2L": efficientnet_v2_l,
     }
 
-    def __init__(self, name, num_classes: str, input_size: tuple[int]) -> None:
-        super(NeuralNetwork, self).__init__()
+    def __init__(self, name: str, weights: Union[bool, str] = None) -> None:
+        super(Encoder, self).__init__()
         self.name = name
-        self.num_classes = num_classes
-
         try:
-            self.feature_extractor = self.implemented_models[self.name](
-                pretrained=True
-            ).features
+            self.encoder = self.implemented_models[self.name](weights=weights).features
         except KeyError as e:
             logger.error(f"Model not implemented: {self.name}")
             raise KeyError(f"Model not implemented: {self.name}") from e
 
-        self.loss = nn.CrossEntropyLoss()
+    def forward(self, x: Tensor) -> Tensor:
+        return self.encoder(x)
+
+
+class Decoder(nn.Module):
+    logger.debug(f"INIT: {__qualname__}")
+    implemented_models = {
+        "VGG19": nn.Sequential(
+            nn.Upsample(scale_factor=2, mode="nearest"),
+            nn.ReLU(),
+            nn.ConvTranspose2d(
+                in_channels=512,
+                out_channels=512,
+                kernel_size=(3, 3),
+                stride=1,
+                padding=1,
+            ),
+            nn.ReLU(),
+            nn.ConvTranspose2d(
+                in_channels=512,
+                out_channels=512,
+                kernel_size=(3, 3),
+                stride=1,
+                padding=1,
+            ),
+            nn.ReLU(),
+            nn.ConvTranspose2d(
+                in_channels=512,
+                out_channels=512,
+                kernel_size=(3, 3),
+                stride=1,
+                padding=1,
+            ),
+            nn.ReLU(),
+            nn.ConvTranspose2d(
+                in_channels=512,
+                out_channels=512,
+                kernel_size=(3, 3),
+                stride=1,
+                padding=1,
+            ),
+            nn.Upsample(scale_factor=2, mode="nearest"),
+            nn.ReLU(),
+            nn.ConvTranspose2d(
+                in_channels=512,
+                out_channels=512,
+                kernel_size=(3, 3),
+                stride=1,
+                padding=1,
+            ),
+            nn.ReLU(),
+            nn.ConvTranspose2d(
+                in_channels=512,
+                out_channels=512,
+                kernel_size=(3, 3),
+                stride=1,
+                padding=1,
+            ),
+            nn.ReLU(),
+            nn.ConvTranspose2d(
+                in_channels=512,
+                out_channels=512,
+                kernel_size=(3, 3),
+                stride=1,
+                padding=1,
+            ),
+            nn.ReLU(),
+            nn.ConvTranspose2d(
+                in_channels=512,
+                out_channels=256,
+                kernel_size=(3, 3),
+                stride=1,
+                padding=1,
+            ),
+            nn.Upsample(scale_factor=2, mode="nearest"),
+            nn.ReLU(),
+            nn.ConvTranspose2d(
+                in_channels=256,
+                out_channels=256,
+                kernel_size=(3, 3),
+                stride=1,
+                padding=1,
+            ),
+            nn.ReLU(),
+            nn.ConvTranspose2d(
+                in_channels=256,
+                out_channels=256,
+                kernel_size=(3, 3),
+                stride=1,
+                padding=1,
+            ),
+            nn.ReLU(),
+            nn.ConvTranspose2d(
+                in_channels=256,
+                out_channels=256,
+                kernel_size=(3, 3),
+                stride=1,
+                padding=1,
+            ),
+            nn.ReLU(),
+            nn.ConvTranspose2d(
+                in_channels=256,
+                out_channels=128,
+                kernel_size=(3, 3),
+                stride=1,
+                padding=1,
+            ),
+            nn.Upsample(scale_factor=2, mode="nearest"),
+            nn.ReLU(),
+            nn.ConvTranspose2d(
+                in_channels=128,
+                out_channels=128,
+                kernel_size=(3, 3),
+                stride=1,
+                padding=1,
+            ),
+            nn.ReLU(),
+            nn.ConvTranspose2d(
+                in_channels=128,
+                out_channels=64,
+                kernel_size=(3, 3),
+                stride=1,
+                padding=1,
+            ),
+            nn.Upsample(scale_factor=2, mode="nearest"),
+            nn.ReLU(),
+            nn.ConvTranspose2d(
+                in_channels=64, out_channels=64, kernel_size=(3, 3), stride=1, padding=1
+            ),
+            nn.ReLU(),
+            nn.ConvTranspose2d(
+                in_channels=64, out_channels=3, kernel_size=(3, 3), stride=1, padding=1
+            ),
+        )
+    }
+
+    def __init__(self, name: str) -> None:
+        super(Decoder, self).__init__()
+        self.name = name
+        try:
+            self.decoder = self.implemented_models[self.name]
+        except KeyError as e:
+            logger.error(f"Model not implemented: {self.name}")
+            raise KeyError(f"Model not implemented: {self.name}") from e
+
+    def forward(self, x: Tensor) -> Tensor:
+        return self.decoder(x)
+
+
+class NeuralNetwork(nn.Module):
+    logger.debug(f"INIT: {__qualname__}")
+
+    def __init__(
+        self,
+        name,
+        encoder_name,
+        encoder_weights,
+        num_classes: str,
+    ) -> None:
+        super(NeuralNetwork, self).__init__()
+        self.name = name
+        self.num_classes = num_classes
+
+        self.encoder = Encoder(name=encoder_name, weights=encoder_weights)
+        self.decoder = Decoder(name=encoder_name)
+
+        self.loss = nn.MSELoss()
         self.optimizer = Adam(self.parameters(), lr=5e-6)
         self.dev: str = None
         self.path = Path(f"./results/{self.name}/")
@@ -144,11 +308,16 @@ class NeuralNetwork(nn.Module):
         logger.info(self)
 
     def forward(self, x: Tensor) -> Tensor:
-        return self.feature_extractor(x)
+        out = self.encoder(x)
+        out = self.decoder(out)
+        return out
 
     def predict(self, img: str, transform: Compose) -> Tensor:
+        self.eval()
         transformed_img = transform(read_image(img))
-        return self(transformed_img)
+        with torch.no_grad():
+            out = self(transformed_img)
+        return out
 
     def train_net(
         self,
@@ -171,22 +340,22 @@ class NeuralNetwork(nn.Module):
             for inputs, labels in train_loader:
                 inputs, labels = inputs.to(self.dev), labels.to(self.dev)
                 outputs = self(inputs)
-                loss = self.loss(squeeze(outputs), squeeze(labels))
+                loss = self.loss(squeeze(outputs), squeeze(inputs))
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
 
                 res_epoch["loss"].loc[epoch] += loss.item()
-                res_epoch["accuracy"].loc[epoch] += (
-                    BinaryAccuracy(squeeze(outputs).to(self.dev), labels.to(self.dev))
-                    .detach()
-                    .cpu()
-                    .numpy()
-                )
+                # res_epoch["accuracy"].loc[epoch] += (
+                #     BinaryAccuracy(squeeze(outputs).to(self.dev), labels.to(self.dev))
+                #     .detach()
+                #     .cpu()
+                #     .numpy()
+                # )
                 self.clean_up([loss, outputs])
 
             res_epoch["loss"].loc[epoch] /= len(train_loader)
-            res_epoch["accuracy"].loc[epoch] /= len(train_loader)
+            # res_epoch["accuracy"].loc[epoch] /= len(train_loader)
 
             if validation_loader:
                 self.eval()
@@ -194,31 +363,31 @@ class NeuralNetwork(nn.Module):
                     inputs, labels = inputs.to(self.dev), labels.to(self.dev)
                     with torch.no_grad():
                         outputs = self(inputs)
-                        loss = self.loss(squeeze(outputs), squeeze(labels))
+                        loss = self.loss(squeeze(outputs), squeeze(inputs))
 
                     res_epoch["validation_loss"].loc[epoch] += loss.item()
-                    res_epoch["validation_acc"].loc[epoch] += (
-                        BinaryAccuracy(
-                            squeeze(outputs).to(self.dev), labels.to(self.dev)
-                        )
-                        .detach()
-                        .cpu()
-                        .numpy()
-                    )
+                    # res_epoch["validation_acc"].loc[epoch] += (
+                    #     BinaryAccuracy(
+                    #         squeeze(outputs).to(self.dev), labels.to(self.dev)
+                    #     )
+                    #     .detach()
+                    #     .cpu()
+                    #     .numpy()
+                    # )
 
                 self.clean_up([loss, outputs])
 
             res_epoch["validation_loss"].loc[epoch] /= len(validation_loader)
-            res_epoch["validation_acc"].loc[epoch] /= len(validation_loader)
+            # res_epoch["validation_acc"].loc[epoch] /= len(validation_loader)
 
             self.results.data = pd.concat([self.results.data, res_epoch])
 
             logger.info(
                 f"Epoch: {epoch:4d} "
                 f"Loss: {res_epoch['loss'][epoch]:7.4f} "
-                f"Accuracy {res_epoch['accuracy'][epoch]:7.4f}  "
+                # f"Accuracy {res_epoch['accuracy'][epoch]:7.4f}  "
                 f"Validation loss: {res_epoch['validation_loss'][epoch]:7.4f}   "
-                f"Validation accuracy: {res_epoch['validation_acc'][epoch]:7.4f}"
+                # f"Validation accuracy: {res_epoch['validation_acc'][epoch]:7.4f}"
             )
 
     def update_filename(self, filename: Path = None) -> None:
@@ -296,7 +465,7 @@ class ModelResults:
     def plot(self) -> None:
         fig: plt.Figure
         ax: plt.Axes
-        fig, ax = plt.subplots(1, 2, figsize=(15, 5), dpi=400)
+        fig, ax = plt.subplots(1, 1, figsize=(15, 5), dpi=400)
         sns.lineplot(
             data=self.data,
             x=self.data.index,
@@ -311,20 +480,20 @@ class ModelResults:
             label="Validation",
             ax=ax[0],
         )
-        sns.lineplot(
-            data=self.data,
-            x=self.data.index,
-            y="accuracy",
-            label="Train",
-            ax=ax[1],
-        )
-        sns.lineplot(
-            data=self.data,
-            x=self.data.index,
-            y="validation_acc",
-            label="Validation",
-            ax=ax[1],
-        )
+        # sns.lineplot(
+        #     data=self.data,
+        #     x=self.data.index,
+        #     y="accuracy",
+        #     label="Train",
+        #     ax=ax[1],
+        # )
+        # sns.lineplot(
+        #     data=self.data,
+        #     x=self.data.index,
+        #     y="validation_acc",
+        #     label="Validation",
+        #     ax=ax[1],
+        # )
         fig.savefig(f"./tex_images/{self.name}_results.png")
 
     def create_dashboard(self, interval) -> None:
