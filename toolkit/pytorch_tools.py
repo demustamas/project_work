@@ -32,6 +32,7 @@ from torchvision.transforms import Compose
 
 from torch import nn
 from torch import squeeze
+from torch import unsqueeze
 from torch import Tensor
 from torch import save
 from torch import load
@@ -313,8 +314,10 @@ class NeuralNetwork(nn.Module):
         return out
 
     def predict(self, img: str, transform: Compose) -> Tensor:
+        img = read_image(img)
+        transformed_img = transform(img)
+        transformed_img = unsqueeze(transformed_img, 0)
         self.eval()
-        transformed_img = transform(read_image(img))
         with torch.no_grad():
             out = self(transformed_img)
         return out
@@ -435,6 +438,8 @@ class NeuralNetwork(nn.Module):
         if model_file:
             try:
                 checkpoint = load(model_file)
+                self.load_state_dict(checkpoint["model_state_dict"])
+                self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
                 logger.info(f"Model loaded from: {model_file}")
             except Exception:
                 logger.warning(f"Model load unsuccessful: {model_file}")
@@ -471,14 +476,14 @@ class ModelResults:
             x=self.data.index,
             y="loss",
             label="Train",
-            ax=ax[0],
+            ax=ax,
         )
         sns.lineplot(
             data=self.data,
             x=self.data.index,
             y="validation_loss",
             label="Validation",
-            ax=ax[0],
+            ax=ax,
         )
         # sns.lineplot(
         #     data=self.data,
