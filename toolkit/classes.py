@@ -4,6 +4,9 @@ logger = Logger("classes").get_logger()
 
 import numpy as np
 import pandas as pd
+
+from sklearn.model_selection import train_test_split
+
 from pathlib import Path
 import gc
 
@@ -20,7 +23,6 @@ class DataFrameCreator(dict):
             "img",
             "label",
             "label_enc",
-            "type",
         ]
         self.update(
             {
@@ -47,7 +49,6 @@ class DataFrameCreator(dict):
                             "img": str(entity),
                             "label": str(label),
                             "label_enc": int(encode),
-                            "type": "dataset",
                         },
                         index=[e],
                     )
@@ -62,22 +63,23 @@ class DataFrameCreator(dict):
         self["dataset"].reset_index(drop=True, inplace=True)
 
     def split_dataset(self, val_rate: float = 0.2, test_rate: float = 0.1) -> None:
-        idx = self["dataset"].index.to_list()
-        val_idx = np.random.choice(idx, size=int(val_rate * len(idx)), replace=False)
-        idx = [i for i in idx if i not in val_idx]
-        test_idx = np.random.choice(idx, size=int(test_rate * len(idx)), replace=False)
-        idx = [i for i in idx if i not in test_idx]
-        self["train"] = self["dataset"].iloc[idx].copy()
-        self["validation"] = self["dataset"].iloc[val_idx].copy()
-        self["test"] = self["dataset"].iloc[test_idx].copy()
-        self["train"].reset_index(drop=True, inplace=True)
-        self["validation"].reset_index(drop=True, inplace=True)
-        self["test"].reset_index(drop=True, inplace=True)
+        self["train"], _X = train_test_split(
+            self["dataset"],
+            test_size=val_rate + test_rate,
+            shuffle=True,
+            stratify=self["dataset"].label,
+        )
+        self["validation"], self["test"] = train_test_split(
+            _X,
+            test_size=test_rate / (val_rate + test_rate),
+            shuffle=True,
+            stratify=_X.label,
+        )
 
     def info(self) -> None:
         for k, v in self.items():
             logger.info(f"Name :          {k}")
-            logger.info(f"Type:           {*v.type.unique(),}")
+            logger.info(f"Labels:         {v.label.value_counts().to_dict()}")
             logger.info(f"Columns:        {*v.columns,}")
             logger.info(f"Shape:          {v.shape}")
             logger.info(

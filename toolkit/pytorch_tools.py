@@ -38,10 +38,8 @@ from torch import save
 from torch import load
 from torch.optim import Adam
 
-from torchmetrics.classification import BinaryAccuracy
-
 import gc
-from typing import Iterable, Callable, Tuple, Union
+from typing import Iterable, Tuple, Union
 
 
 class CustomImageDataSet(Dataset):
@@ -51,8 +49,8 @@ class CustomImageDataSet(Dataset):
         self,
         images: Iterable[str],
         labels: Iterable[np.float32],
-        transform: Iterable[Callable] = None,
-        target_transform: Iterable[Callable] = None,
+        transform: Compose = None,
+        target_transform: Compose = None,
     ):
         self.images = images
         self.labels = labels
@@ -100,6 +98,8 @@ class CustomImageDataLoader(dict):
         if num_workers == -1:
             num_workers = multiprocessing.cpu_count()
             logger.info(f"Setting dataloader subprocesses to {num_workers}")
+        else:
+            logger.warning(f"Setting dataloader subprocesses manually to {num_workers}")
         tmp_dict: dict = {
             k.split("_")[0]: DataLoader(
                 v, batch_size=batch_size, shuffle=True, num_workers=num_workers
@@ -281,17 +281,18 @@ class NeuralNetwork(nn.Module):
 
     def __init__(
         self,
-        name,
-        encoder_name,
-        encoder_weights,
+        name: str,
         num_classes: str,
+        encoder_name: str,
+        encoder_weights: Union[bool, str],
+        decoder_name: str = "VGG19",
     ) -> None:
         super(NeuralNetwork, self).__init__()
         self.name = name
         self.num_classes = num_classes
 
         self.encoder = Encoder(name=encoder_name, weights=encoder_weights)
-        self.decoder = Decoder(name=encoder_name)
+        self.decoder = Decoder(name=decoder_name)
 
         self.loss = nn.MSELoss()
         self.optimizer = Adam(self.parameters(), lr=5e-6)
@@ -340,8 +341,8 @@ class NeuralNetwork(nn.Module):
                 index=[epoch],
             )
             self.train()
-            for inputs, labels in train_loader:
-                inputs, labels = inputs.to(self.dev), labels.to(self.dev)
+            for inputs, _ in train_loader:
+                inputs = inputs.to(self.dev)
                 outputs = self(inputs)
                 loss = self.loss(squeeze(outputs), squeeze(inputs))
                 self.optimizer.zero_grad()
@@ -349,48 +350,30 @@ class NeuralNetwork(nn.Module):
                 self.optimizer.step()
 
                 res_epoch["loss"].loc[epoch] += loss.item()
-                # res_epoch["accuracy"].loc[epoch] += (
-                #     BinaryAccuracy(squeeze(outputs).to(self.dev), labels.to(self.dev))
-                #     .detach()
-                #     .cpu()
-                #     .numpy()
-                # )
                 self.clean_up([loss, outputs])
 
             res_epoch["loss"].loc[epoch] /= len(train_loader)
-            # res_epoch["accuracy"].loc[epoch] /= len(train_loader)
 
             if validation_loader:
                 self.eval()
-                for inputs, labels in validation_loader:
-                    inputs, labels = inputs.to(self.dev), labels.to(self.dev)
+                for inputs, _ in validation_loader:
+                    inputs = inputs.to(self.dev)
                     with torch.no_grad():
                         outputs = self(inputs)
                         loss = self.loss(squeeze(outputs), squeeze(inputs))
 
                     res_epoch["validation_loss"].loc[epoch] += loss.item()
-                    # res_epoch["validation_acc"].loc[epoch] += (
-                    #     BinaryAccuracy(
-                    #         squeeze(outputs).to(self.dev), labels.to(self.dev)
-                    #     )
-                    #     .detach()
-                    #     .cpu()
-                    #     .numpy()
-                    # )
 
                 self.clean_up([loss, outputs])
 
             res_epoch["validation_loss"].loc[epoch] /= len(validation_loader)
-            # res_epoch["validation_acc"].loc[epoch] /= len(validation_loader)
 
             self.results.data = pd.concat([self.results.data, res_epoch])
 
             logger.info(
                 f"Epoch: {epoch:4d} "
                 f"Loss: {res_epoch['loss'][epoch]:7.4f} "
-                # f"Accuracy {res_epoch['accuracy'][epoch]:7.4f}  "
                 f"Validation loss: {res_epoch['validation_loss'][epoch]:7.4f}   "
-                # f"Validation accuracy: {res_epoch['validation_acc'][epoch]:7.4f}"
             )
 
     def update_filename(self, filename: Path = None) -> None:
@@ -485,74 +468,4 @@ class ModelResults:
             label="Validation",
             ax=ax,
         )
-        # sns.lineplot(
-        #     data=self.data,
-        #     x=self.data.index,
-        #     y="accuracy",
-        #     label="Train",
-        #     ax=ax[1],
-        # )
-        # sns.lineplot(
-        #     data=self.data,
-        #     x=self.data.index,
-        #     y="validation_acc",
-        #     label="Validation",
-        #     ax=ax[1],
-        # )
         fig.savefig(f"./tex_images/{self.name}_results.png")
-
-    def create_dashboard(self, interval) -> None:
-        self.dashboard = JupyterDash(
-            __name__,
-            title="Railway Track Fault Detection",
-        )
-        self.dashboard.layout = html.Div(
-            children=[
-                html.H1(children="Railway Track Fault Detection"),
-                html.H2(children="Loss functions"),
-                dcc.Graph(id="loss"),
-                html.H2(children="Accuracy functions"),
-                dcc.Graph(id="acc"),
-                dcc.Interval(
-                    id="auto-updater",
-                    interval=interval * 1000,
-                    n_intervals=1,
-                    max_intervals=-1,
-                ),
-            ]
-        )
-        self.dashboard.callback(
-            Output("loss", "figure"),
-            Output("acc", "figure"),
-            Input("auto-updater", "n_intervals"),
-        )(self.update_figures)
-
-        logger.info("Dashboard created")
-
-    def update_figures(self, _):
-        if self.data.empty:
-            df = pd.DataFrame.from_dict(
-                data={
-                    "loss": [0],
-                    "accuracy": [0],
-                    "validation_loss": [0],
-                    "validation_acc": [0],
-                }
-            )
-        else:
-            df = self.data
-        template = "plotly_dark"
-        fig_loss = px.line(
-            data_frame=df,
-            x=df.index,
-            y=["loss", "validation_loss"],
-            template=template,
-        )
-
-        fig_acc = px.line(
-            data_frame=df,
-            x=df.index,
-            y=["accuracy", "validation_acc"],
-            template=template,
-        )
-        return fig_loss, fig_acc
