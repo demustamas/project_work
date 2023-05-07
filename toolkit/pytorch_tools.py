@@ -34,7 +34,6 @@ from torch import save
 from torch import load
 from torch.optim import Adam
 
-import gc
 from typing import Iterable, Tuple, Union, List
 
 from tqdm.notebook import tqdm
@@ -405,7 +404,6 @@ class AutoEncoder(nn.Module):
                 self.optimizer.step()
 
                 res_epoch["loss"].loc[epoch] += self.loss.item()
-                # self.clean_up([loss, outputs])
 
             res_epoch["loss"].loc[epoch] /= len(train_loader)
 
@@ -418,8 +416,6 @@ class AutoEncoder(nn.Module):
                         loss = self.loss_fn(squeeze(outputs), squeeze(inputs))
 
                     res_epoch["validation_loss"].loc[epoch] += loss.item()
-
-                # self.clean_up([loss, outputs])
 
             res_epoch["validation_loss"].loc[epoch] /= len(validation_loader)
 
@@ -434,7 +430,7 @@ class AutoEncoder(nn.Module):
 
     def calc_feature_vectors(
         self, dataset: pd.DataFrame, transform: Compose
-    ) -> Tuple(List[np.ndarray], np.ndarray):
+    ) -> Tuple[List[np.ndarray], np.ndarray]:
         feature_vectors = [[], [], [], []]
         loss = []
         self.eval()
@@ -461,8 +457,8 @@ class AutoEncoder(nn.Module):
     def plot_feature_vectors(self, feature_vectors: List[np.ndarray], loss: np.ndarray):
         pca = PCA(n_components=50)
         tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
-        _, ax = plt.subplots(
-            2, 2, figsize=(8, 6), tight_layout=True, sharex=True, sharey=True
+        fig, ax = plt.subplots(
+            2, 2, figsize=(8, 6), tight_layout=True, sharex=True, sharey=True, dpi=400
         )
         ax = ax.flatten()
         titles = ["inputs", "encoded", "filter_matched", "decoded"]
@@ -471,13 +467,23 @@ class AutoEncoder(nn.Module):
             res_pca = pca.fit_transform(vector)
             res_tsne = pd.DataFrame(tsne.fit_transform(res_pca))
             sns.scatterplot(data=res_tsne, x=0, y=1, hue=loss, ax=ax[v])
-            ax[v].set_xlabels([])
-            ax[v].set_ylabels([])
+            ax[v].set_xlabel([])
+            ax[v].set_ylabel([])
             ax[v].set_title(titles[v])
         plt.show()
-        _, ax = plt.subplots(1, 1, figsize=(15, 6))
+        fig.savefig(
+            self.filename.with_stem(
+                f"{self.filename.stem}_feature_vectors"
+            ).with_suffix(".png")
+        )
+        fig, ax = plt.subplots(1, 1, figsize=(15, 6), dpi=400)
         sns.lineplot(loss, ax=ax)
         plt.show()
+        fig.savefig(
+            self.filename.with_stem(
+                f"{self.filename.stem}_feature_vectors_loss"
+            ).with_suffix(".png")
+        )
 
     def update_filename(self, filename: Path = None) -> None:
         self.filename = filename or (
@@ -499,21 +505,15 @@ class AutoEncoder(nn.Module):
             logger.warning(f"Device set manually to {self.dev}")
         self.to(self.dev)
 
-    def clean_up(self, variables: Iterable = None) -> None:
-        for variable in variables:
-            del variable
-        gc.collect()
-        cuda.empty_cache()
-
     def save_model(self) -> None:
         save(
             {
-                "epoch": self.epoch,
+                "epoch": self.epochs,
                 "loss": self.loss,
                 "model_state_dict": self.state_dict(),
                 "optimizer_state_dict": self.optimizer.state_dict(),
             },
-            str(self.filename),
+            self.filename,
         )
         logger.info(f"Model saved to: {self.filename}")
 
@@ -565,4 +565,6 @@ class ModelResults:
             label="Validation",
             ax=ax,
         )
-        fig.savefig(f"./tex_images/{self.name}_results.png")
+        fig.savefig(
+            self.filename.with_stem(f"{self.filename.stem}_results").with_suffix(".png")
+        )

@@ -4,7 +4,11 @@ logger = Logger("classes").get_logger()
 
 import pandas as pd
 
+import matplotlib.pyplot as plt
+
 from sklearn.model_selection import train_test_split
+
+from torchvision.io import read_image
 
 from pathlib import Path
 import gc
@@ -12,23 +16,39 @@ import gc
 from typing import List, Dict
 
 
+class ImageDataFrame(pd.DataFrame):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    @property
+    def _constructor(self):
+        return ImageDataFrame
+
+    def show_images(self, idxs: List[int]) -> None:
+        for idx in idxs:
+            _, ax = plt.subplots(1, 1, figsize=(15, 10), tight_layout=True, dpi=400)
+            ax.imshow(read_image(self.iloc[idx].img).permute(1, 2, 0).detach().numpy())
+            ax.set_ylabel(f"{idx}")
+            plt.show()
+
+
 class DataFrameCreator(dict):
     logger.debug(f"INIT: {__qualname__}")
+    columns: List[str] = [
+        "img_dir",
+        "img_file",
+        "img",
+        "label",
+        "label_enc",
+    ]
 
     def __init__(self) -> None:
-        self.columns: List[str] = [
-            "img_dir",
-            "img_file",
-            "img",
-            "label",
-            "label_enc",
-        ]
         self.update(
             {
-                "dataset": pd.DataFrame(columns=self.columns),
-                "train": pd.DataFrame(columns=self.columns),
-                "validation": pd.DataFrame(columns=self.columns),
-                "test": pd.DataFrame(columns=self.columns),
+                "dataset": ImageDataFrame(columns=self.columns),
+                "train": ImageDataFrame(columns=self.columns),
+                "validation": ImageDataFrame(columns=self.columns),
+                "test": ImageDataFrame(columns=self.columns),
             }
         )
 
