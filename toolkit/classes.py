@@ -2,7 +2,6 @@ from toolkit.logger import Logger
 
 logger = Logger("classes").get_logger()
 
-import numpy as np
 import pandas as pd
 
 from sklearn.model_selection import train_test_split
@@ -75,6 +74,9 @@ class DataFrameCreator(dict):
             shuffle=True,
             stratify=_X.label,
         )
+        self["train"].reset_index(drop=True, inplace=True)
+        self["validation"].reset_index(drop=True, inplace=True)
+        self["test"].reset_index(drop=True, inplace=True)
 
     def info(self) -> None:
         for k, v in self.items():

@@ -7,17 +7,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from jupyter_dash import JupyterDash
-from dash import html
-from dash import dcc
-from dash import Input
-from dash import Output
-import plotly.express as px
-
 from pathlib import Path
 from datetime import datetime
 
 import multiprocessing
+
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 
 import torch
 import torch.cuda as cuda
@@ -39,7 +35,9 @@ from torch import load
 from torch.optim import Adam
 
 import gc
-from typing import Iterable, Tuple, Union
+from typing import Iterable, Tuple, Union, List
+
+from tqdm.notebook import tqdm
 
 
 class CustomImageDataSet(Dataset):
@@ -60,7 +58,7 @@ class CustomImageDataSet(Dataset):
     def __len__(self) -> int:
         return len(self.labels)
 
-    def __getitem__(self, idx) -> Tuple[Tensor, np.float32]:
+    def __getitem__(self, idx) -> Tuple[Tensor, int]:
         image = read_image(self.images.loc[idx])
         label = self.labels.loc[idx]
         if self.transform:
@@ -122,7 +120,24 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
         self.name = name
         try:
-            self.encoder = self.implemented_models[self.name](weights=weights).features
+            if self.name in {"VGG19", "EfficientNetV2L"}:
+                self.encoder = self.implemented_models[self.name](
+                    weights=weights
+                ).features
+            elif self.name == "ResNet50":
+                loaded_model = self.implemented_models[self.name](weights=weights)
+                self.encoder = nn.Sequential(
+                    loaded_model.conv1,
+                    loaded_model.bn1,
+                    loaded_model.relu,
+                    loaded_model.maxpool,
+                    loaded_model.layer1,
+                    loaded_model.layer2,
+                    loaded_model.layer3,
+                    loaded_model.layer4,
+                )
+            else:
+                raise KeyError(f"Model not implemented: {self.name}")
         except KeyError as e:
             logger.error(f"Model not implemented: {self.name}")
             raise KeyError(f"Model not implemented: {self.name}") from e
@@ -276,7 +291,44 @@ class Decoder(nn.Module):
         return self.decoder(x)
 
 
-class NeuralNetwork(nn.Module):
+class MatchFilters(nn.Module):
+    logger.debug(f"INIT: {__qualname__}")
+    implemented_models = {
+        "VGG19": [512],
+        "ResNet50": [2048, 1024, 512],
+        "EfficientNetV2L": [1280, 896, 512],
+    }
+
+    def __init__(self, encoder: str, filters: List[int] = None) -> None:
+        super(MatchFilters, self).__init__()
+        try:
+            self.filters = filters or self.implemented_models[encoder]
+            logger.info(f"Using matching filters: {self.filters}")
+        except KeyError as e:
+            logger.error(f"Model not implemented: {self.name}")
+            raise KeyError(f"Model not implemented: {self.name}") from e
+
+        self.layers = []
+        if range(len(self.filters) - 1):
+            self.layers.extend(
+                nn.Conv2d(
+                    in_channels=self.filters[i],
+                    out_channels=self.filters[i + 1],
+                    kernel_size=1,
+                    stride=1,
+                    padding=0,
+                )
+                for i in range(len(self.filters) - 1)
+            )
+        else:
+            self.layers.extend([nn.Identity()])
+        self.layers = nn.Sequential(*self.layers)
+
+    def forward(self, x: Tensor) -> Tensor:
+        return self.layers(x)
+
+
+class AutoEncoder(nn.Module):
     logger.debug(f"INIT: {__qualname__}")
 
     def __init__(
@@ -287,15 +339,18 @@ class NeuralNetwork(nn.Module):
         encoder_weights: Union[bool, str],
         decoder_name: str = "VGG19",
     ) -> None:
-        super(NeuralNetwork, self).__init__()
+        super(AutoEncoder, self).__init__()
         self.name = name
         self.num_classes = num_classes
 
         self.encoder = Encoder(name=encoder_name, weights=encoder_weights)
         self.decoder = Decoder(name=decoder_name)
+        self.match_filters = MatchFilters(encoder=encoder_name)
 
-        self.loss = nn.MSELoss()
+        self.loss_fn = nn.MSELoss()
+        self.loss = 0
         self.optimizer = Adam(self.parameters(), lr=5e-6)
+        self.epochs = 0
         self.dev: str = None
         self.path = Path(f"./results/{self.name}/")
         if self.path.exists():
@@ -306,11 +361,12 @@ class NeuralNetwork(nn.Module):
         self.update_filename()
         self.results = ModelResults(name=self.name, filename=self.filename)
 
-        logger.info(f"Neural Network constructed: {self.name}")
+        logger.info(f"AutoEncoder constructed: {self.name}")
         logger.info(self)
 
     def forward(self, x: Tensor) -> Tensor:
         out = self.encoder(x)
+        out = self.match_filters(out)
         out = self.decoder(out)
         return out
 
@@ -318,6 +374,7 @@ class NeuralNetwork(nn.Module):
         img = read_image(img)
         transformed_img = transform(img)
         transformed_img = unsqueeze(transformed_img, 0)
+        transformed_img.to(self.dev)
         self.eval()
         with torch.no_grad():
             out = self(transformed_img)
@@ -334,23 +391,21 @@ class NeuralNetwork(nn.Module):
             res_epoch: pd.DataFrame = pd.DataFrame(
                 data={
                     "loss": 0.0,
-                    "accuracy": 0.0,
                     "validation_loss": 0.0,
-                    "validation_acc": 0.0,
                 },
                 index=[epoch],
             )
             self.train()
-            for inputs, _ in train_loader:
+            for inputs, _ in tqdm(train_loader):
                 inputs = inputs.to(self.dev)
                 outputs = self(inputs)
-                loss = self.loss(squeeze(outputs), squeeze(inputs))
+                self.loss = self.loss_fn(squeeze(outputs), squeeze(inputs))
                 self.optimizer.zero_grad()
-                loss.backward()
+                self.loss.backward()
                 self.optimizer.step()
 
-                res_epoch["loss"].loc[epoch] += loss.item()
-                self.clean_up([loss, outputs])
+                res_epoch["loss"].loc[epoch] += self.loss.item()
+                # self.clean_up([loss, outputs])
 
             res_epoch["loss"].loc[epoch] /= len(train_loader)
 
@@ -360,21 +415,69 @@ class NeuralNetwork(nn.Module):
                     inputs = inputs.to(self.dev)
                     with torch.no_grad():
                         outputs = self(inputs)
-                        loss = self.loss(squeeze(outputs), squeeze(inputs))
+                        loss = self.loss_fn(squeeze(outputs), squeeze(inputs))
 
                     res_epoch["validation_loss"].loc[epoch] += loss.item()
 
-                self.clean_up([loss, outputs])
+                # self.clean_up([loss, outputs])
 
             res_epoch["validation_loss"].loc[epoch] /= len(validation_loader)
 
             self.results.data = pd.concat([self.results.data, res_epoch])
+            self.epochs += 1
 
             logger.info(
                 f"Epoch: {epoch:4d} "
                 f"Loss: {res_epoch['loss'][epoch]:7.4f} "
                 f"Validation loss: {res_epoch['validation_loss'][epoch]:7.4f}   "
             )
+
+    def calc_feature_vectors(
+        self, dataset: pd.DataFrame, transform: Compose
+    ) -> Tuple(List[np.ndarray], np.ndarray):
+        feature_vectors = [[], [], [], []]
+        loss = []
+        self.eval()
+        for _, row in tqdm(dataset.iterrows(), total=len(dataset.index)):
+            img = read_image(row.img)
+            transformed_img = transform(img)
+            transformed_img = torch.unsqueeze(transformed_img, 0)
+            transformed_img.to(self.dev)
+            with torch.no_grad():
+                encoded = self.encoder(transformed_img)
+                filter_matched = self.match_filters(encoded)
+                decoded = self.decoder(filter_matched)
+                loss.append(
+                    self.loss_fn(
+                        torch.squeeze(decoded), torch.squeeze(transformed_img)
+                    ).item()
+                )
+            for i, res in enumerate(
+                [transformed_img, encoded, filter_matched, decoded]
+            ):
+                feature_vectors[i].append(res.flatten().detach().numpy())
+        return feature_vectors, loss
+
+    def plot_feature_vectors(self, feature_vectors: List[np.ndarray], loss: np.ndarray):
+        pca = PCA(n_components=50)
+        tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
+        _, ax = plt.subplots(
+            2, 2, figsize=(8, 6), tight_layout=True, sharex=True, sharey=True
+        )
+        ax = ax.flatten()
+        titles = ["inputs", "encoded", "filter_matched", "decoded"]
+        for v, vector in enumerate(feature_vectors):
+            vector = np.array(vector)
+            res_pca = pca.fit_transform(vector)
+            res_tsne = pd.DataFrame(tsne.fit_transform(res_pca))
+            sns.scatterplot(data=res_tsne, x=0, y=1, hue=loss, ax=ax[v])
+            ax[v].set_xlabels([])
+            ax[v].set_ylabels([])
+            ax[v].set_title(titles[v])
+        plt.show()
+        _, ax = plt.subplots(1, 1, figsize=(15, 6))
+        sns.lineplot(loss, ax=ax)
+        plt.show()
 
     def update_filename(self, filename: Path = None) -> None:
         self.filename = filename or (
@@ -402,32 +505,28 @@ class NeuralNetwork(nn.Module):
         gc.collect()
         cuda.empty_cache()
 
-    def save_model(self, epoch: int = -1, loss: float = -1) -> None:
-        if epoch == -1 or loss == -1:
-            logger.warning("Epoch or Loss not given, model not saved!")
-        else:
-            save(
-                {
-                    "epoch": epoch,
-                    "model_state_dict": self.state_dict(),
-                    "optimizer_state_dict": self.optimizer.state_dict(),
-                    "loss": loss,
-                },
-                str(self.filename),
-            )
-            logger.info(f"Model saved to {self.filename}")
+    def save_model(self) -> None:
+        save(
+            {
+                "epoch": self.epoch,
+                "loss": self.loss,
+                "model_state_dict": self.state_dict(),
+                "optimizer_state_dict": self.optimizer.state_dict(),
+            },
+            str(self.filename),
+        )
+        logger.info(f"Model saved to: {self.filename}")
 
     def load_model(self, model_file: str = None) -> None:
-        if model_file:
-            try:
-                checkpoint = load(model_file)
+        try:
+            with load(model_file) as checkpoint:
+                self.epochs = checkpoint["epoch"]
+                self.loss = checkpoint["loss"]
                 self.load_state_dict(checkpoint["model_state_dict"])
                 self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
                 logger.info(f"Model loaded from: {model_file}")
-            except Exception:
-                logger.warning(f"Model load unsuccessful: {model_file}")
-        else:
-            logger.warning("No model file given, model not loaded!")
+        except Exception:
+            logger.warning(f"Model load unsuccessful: {model_file}")
 
 
 class ModelResults:
@@ -435,11 +534,11 @@ class ModelResults:
 
     def __init__(self, name: str, filename: Path) -> None:
         self.data: pd.DataFrame = pd.DataFrame(
-            columns=["loss", "accuracy", "validation_loss", "validation_acc"],
+            columns=["loss", "validation_loss"],
         )
+        self.data.index.name = "epochs"
         self.name = name
         self.filename = filename.with_suffix(".csv")
-        self.dashboard: JupyterDash = None
         logger.info(f"Results filename: {self.filename}")
 
     def save_data(self) -> None:
@@ -451,8 +550,6 @@ class ModelResults:
         logger.info(f"Results loaded from {filename}")
 
     def plot(self) -> None:
-        fig: plt.Figure
-        ax: plt.Axes
         fig, ax = plt.subplots(1, 1, figsize=(15, 5), dpi=400)
         sns.lineplot(
             data=self.data,
