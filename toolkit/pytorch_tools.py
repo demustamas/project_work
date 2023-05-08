@@ -20,7 +20,9 @@ import torch.cuda as cuda
 
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
-from torchvision.io import read_image
+# from torchvision.io import read_image
+from PIL import Image
+from torchvision.transforms.functional import to_tensor
 from torchvision.models import vgg19
 from torchvision.models import resnet50
 from torchvision.models import efficientnet_v2_l
@@ -58,7 +60,8 @@ class CustomImageDataSet(Dataset):
         return len(self.labels)
 
     def __getitem__(self, idx) -> Tuple[Tensor, int]:
-        image = read_image(self.images.loc[idx])
+        # image = read_image(self.images.loc[idx])
+        image = to_tensor(Image.open(self.images.loc[idx]))
         label = self.labels.loc[idx]
         if self.transform:
             image = self.transform(image)
@@ -91,7 +94,7 @@ class CustomImageDataLoader(dict):
             )
         logger.info("CustomImageDataSet created")
 
-    def create_dataloaders(self, batch_size: int, num_workers: int = -1) -> None:
+    def create_dataloaders(self, batch_size: int, num_workers: int = 16) -> None:
         if num_workers == -1:
             num_workers = multiprocessing.cpu_count()
             logger.info(f"Setting dataloader subprocesses to {num_workers}")
@@ -370,7 +373,8 @@ class AutoEncoder(nn.Module):
         return out
 
     def predict(self, img: str, transform: Compose) -> Tensor:
-        img = read_image(img)
+        # img = read_image(img)
+        img = to_tensor(Image.open(img))
         transformed_img = transform(img)
         transformed_img = unsqueeze(transformed_img, 0)
         transformed_img.to(self.dev)
@@ -435,7 +439,8 @@ class AutoEncoder(nn.Module):
         loss = []
         self.eval()
         for _, row in tqdm(dataset.iterrows(), total=len(dataset.index)):
-            img = read_image(row.img)
+            # img = read_image(row.img)
+            img = to_tensor(Image.open(row.img))
             transformed_img = transform(img)
             transformed_img = torch.unsqueeze(transformed_img, 0)
             transformed_img.to(self.dev)
