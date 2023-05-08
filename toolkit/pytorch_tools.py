@@ -505,7 +505,7 @@ class AutoEncoder(nn.Module):
             logger.warning(f"Device set manually to {self.dev}")
         self.to(self.dev)
 
-    def save_model(self) -> None:
+    def save(self) -> None:
         save(
             {
                 "epoch": self.epochs,
@@ -517,7 +517,7 @@ class AutoEncoder(nn.Module):
         )
         logger.info(f"Model saved to: {self.filename}")
 
-    def load_model(self, model_file: str = None) -> None:
+    def load(self, model_file: str = None) -> None:
         try:
             with load(model_file) as checkpoint:
                 self.epochs = checkpoint["epoch"]
@@ -541,11 +541,11 @@ class ModelResults:
         self.filename = filename.with_suffix(".csv")
         logger.info(f"Results filename: {self.filename}")
 
-    def save_data(self) -> None:
+    def save(self) -> None:
         self.data.to_csv(self.filename)
         logger.info(f"Results saved to: {self.filename}")
 
-    def load_data(self, filename: str) -> None:
+    def load(self, filename: str) -> None:
         self.data = pd.read_csv(filename)
         logger.info(f"Results loaded from {filename}")
 
