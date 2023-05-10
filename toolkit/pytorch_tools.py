@@ -20,6 +20,7 @@ import torch.cuda as cuda
 
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
+
 # from torchvision.io import read_image
 from PIL import Image
 from torchvision.transforms.functional import to_tensor
@@ -60,7 +61,6 @@ class CustomImageDataSet(Dataset):
         return len(self.labels)
 
     def __getitem__(self, idx) -> Tuple[Tensor, int]:
-        # image = read_image(self.images.loc[idx])
         image = to_tensor(Image.open(self.images.loc[idx]))
         label = self.labels.loc[idx]
         if self.transform:
@@ -142,7 +142,7 @@ class Encoder(nn.Module):
                 raise KeyError(f"Model not implemented: {self.name}")
         except KeyError as e:
             logger.error(f"Model not implemented: {self.name}")
-            raise KeyError(f"Model not implemented: {self.name}") from e
+            raise NotImplementedError(f"Model not implemented: {self.name}") from e
 
     def forward(self, x: Tensor) -> Tensor:
         return self.encoder(x)
@@ -287,7 +287,7 @@ class Decoder(nn.Module):
             self.decoder = self.implemented_models[self.name]
         except KeyError as e:
             logger.error(f"Model not implemented: {self.name}")
-            raise KeyError(f"Model not implemented: {self.name}") from e
+            raise NotImplementedError(f"Model not implemented: {self.name}") from e
 
     def forward(self, x: Tensor) -> Tensor:
         return self.decoder(x)
@@ -308,7 +308,7 @@ class MatchFilters(nn.Module):
             logger.info(f"Using matching filters: {self.filters}")
         except KeyError as e:
             logger.error(f"Model not implemented: {self.name}")
-            raise KeyError(f"Model not implemented: {self.name}") from e
+            raise NotImplementedError(f"Model not implemented: {self.name}") from e
 
         self.layers = []
         if range(len(self.filters) - 1):
@@ -336,14 +336,12 @@ class AutoEncoder(nn.Module):
     def __init__(
         self,
         name: str,
-        num_classes: str,
         encoder_name: str,
         encoder_weights: Union[bool, str],
         decoder_name: str = "VGG19",
     ) -> None:
         super(AutoEncoder, self).__init__()
         self.name = name
-        self.num_classes = num_classes
 
         self.encoder = Encoder(name=encoder_name, weights=encoder_weights)
         self.decoder = Decoder(name=decoder_name)
@@ -373,11 +371,10 @@ class AutoEncoder(nn.Module):
         return out
 
     def predict(self, img: str, transform: Compose) -> Tensor:
-        # img = read_image(img)
         img = to_tensor(Image.open(img))
         transformed_img = transform(img)
         transformed_img = unsqueeze(transformed_img, 0)
-        transformed_img.to(self.dev)
+        transformed_img = transformed_img.to(self.dev)
         self.eval()
         with torch.no_grad():
             out = self(transformed_img)
@@ -390,7 +387,7 @@ class AutoEncoder(nn.Module):
         validation_loader: DataLoader = None,
     ) -> None:
         logger.info("Model training started")
-        for epoch in range(epochs):
+        for epoch in range(self.epochs, self.epochs + epochs):
             res_epoch: pd.DataFrame = pd.DataFrame(
                 data={
                     "loss": 0.0,
@@ -439,11 +436,10 @@ class AutoEncoder(nn.Module):
         loss = []
         self.eval()
         for _, row in tqdm(dataset.iterrows(), total=len(dataset.index)):
-            # img = read_image(row.img)
             img = to_tensor(Image.open(row.img))
             transformed_img = transform(img)
             transformed_img = torch.unsqueeze(transformed_img, 0)
-            transformed_img.to(self.dev)
+            transformed_img = transformed_img.to(self.dev)
             with torch.no_grad():
                 encoded = self.encoder(transformed_img)
                 filter_matched = self.match_filters(encoded)
@@ -456,25 +452,35 @@ class AutoEncoder(nn.Module):
             for i, res in enumerate(
                 [transformed_img, encoded, filter_matched, decoded]
             ):
-                feature_vectors[i].append(res.flatten().detach().numpy())
+                feature_vectors[i].append(res.flatten().cpu().detach().numpy())
         return feature_vectors, loss
 
     def plot_feature_vectors(self, feature_vectors: List[np.ndarray], loss: np.ndarray):
         pca = PCA(n_components=50)
         tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
-        fig, ax = plt.subplots(
-            2, 2, figsize=(8, 6), tight_layout=True, sharex=True, sharey=True, dpi=400
-        )
+        fig, ax = plt.subplots(2, 2, figsize=(8, 6), sharex=True, sharey=True, dpi=400)
         ax = ax.flatten()
         titles = ["inputs", "encoded", "filter_matched", "decoded"]
         for v, vector in enumerate(feature_vectors):
             vector = np.array(vector)
             res_pca = pca.fit_transform(vector)
             res_tsne = pd.DataFrame(tsne.fit_transform(res_pca))
-            sns.scatterplot(data=res_tsne, x=0, y=1, hue=loss, ax=ax[v])
-            ax[v].set_xlabel([])
-            ax[v].set_ylabel([])
+            sns.scatterplot(
+                data=res_tsne,
+                x=0,
+                y=1,
+                hue=loss,
+                palette="Purples",
+                ax=ax[v],
+                legend=False,
+            )
+            ax[v].set_xlabel(None)
+            ax[v].set_ylabel(None)
             ax[v].set_title(titles[v])
+        norm = plt.Normalize(min(loss), max(loss))
+        sm = plt.cm.ScalarMappable(cmap="Purples", norm=norm)
+        sm.set_array([])
+        fig.colorbar(sm, ax=ax, location="bottom", aspect=50, pad=0.07)
         plt.show()
         fig.savefig(
             self.filename.with_stem(
@@ -524,14 +530,17 @@ class AutoEncoder(nn.Module):
 
     def load(self, model_file: str = None) -> None:
         try:
-            with load(model_file) as checkpoint:
-                self.epochs = checkpoint["epoch"]
-                self.loss = checkpoint["loss"]
-                self.load_state_dict(checkpoint["model_state_dict"])
-                self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-                logger.info(f"Model loaded from: {model_file}")
-        except Exception:
-            logger.warning(f"Model load unsuccessful: {model_file}")
+            checkpoint = load(model_file, map_location=self.dev)
+            self.epochs = checkpoint["epoch"]
+            self.loss = checkpoint["loss"]
+            self.load_state_dict(checkpoint["model_state_dict"])
+            self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+            self.filename = Path(model_file)
+            self.results.filename = Path(model_file).with_suffix(".csv")
+            logger.info(f"Model loaded from: {model_file}")
+        except Exception as e:
+            logger.error(f"Model load unsuccessful: {model_file}")
+            raise RuntimeError(f"Model load unsuccessful: {model_file}") from e
 
 
 class ModelResults:
@@ -547,12 +556,16 @@ class ModelResults:
         logger.info(f"Results filename: {self.filename}")
 
     def save(self) -> None:
-        self.data.to_csv(self.filename)
+        self.data.to_csv(self.filename, index_label="epochs")
         logger.info(f"Results saved to: {self.filename}")
 
     def load(self, filename: str) -> None:
-        self.data = pd.read_csv(filename)
-        logger.info(f"Results loaded from {filename}")
+        try:
+            self.data = pd.read_csv(filename, index_col="epochs")
+            logger.info(f"Results loaded from {filename}")
+        except Exception as e:
+            logger.error(f"Load results unsuccessful: {filename}")
+            raise RuntimeError("Load results unsuccessful: {filename}") from e
 
     def plot(self) -> None:
         fig, ax = plt.subplots(1, 1, figsize=(15, 5), dpi=400)

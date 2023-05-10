@@ -5,10 +5,9 @@ logger = Logger("classes").get_logger()
 import pandas as pd
 
 import matplotlib.pyplot as plt
+from PIL import Image
 
 from sklearn.model_selection import train_test_split
-
-from torchvision.io import read_image
 
 from pathlib import Path
 import gc
@@ -27,7 +26,7 @@ class ImageDataFrame(pd.DataFrame):
     def show_images(self, idxs: List[int]) -> None:
         for idx in idxs:
             _, ax = plt.subplots(1, 1, figsize=(15, 10), tight_layout=True, dpi=400)
-            ax.imshow(read_image(self.iloc[idx].img).permute(1, 2, 0).detach().numpy())
+            ax.imshow(Image.open(self.iloc[idx].img))
             ax.set_ylabel(f"{idx}")
             plt.show()
 
