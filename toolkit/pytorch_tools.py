@@ -358,10 +358,10 @@ class AutoEncoder(nn.Module):
         self.dev: str = None
         self.path = Path(f"./results/{self.name}/")
         if self.path.exists():
-            logger.debug(f"Folder exists: {self.path}")
+            logger.debug(f"Folder exists: /{self.path}")
         else:
             self.path.mkdir(parents=True)
-            logger.info(f"Folder created: {self.path}")
+            logger.info(f"Folder created: /{self.path}")
         self.update_filename()
         self.results = ModelResults(name=self.name, filename=self.filename)
 
@@ -530,7 +530,7 @@ class AutoEncoder(nn.Module):
             },
             self.filename,
         )
-        logger.info(f"Model saved to: {self.filename}")
+        logger.info(f"Model saved to: /{self.filename}")
 
     def load(self, model_file: str = None) -> None:
         try:
@@ -541,10 +541,10 @@ class AutoEncoder(nn.Module):
             self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
             self.filename = Path(model_file)
             self.results.filename = Path(model_file).with_suffix(".csv")
-            logger.info(f"Model loaded from: {model_file}")
+            logger.info(f"Model loaded from: /{model_file}")
         except Exception as e:
-            logger.error(f"Model load unsuccessful: {model_file}")
-            raise RuntimeError(f"Model load unsuccessful: {model_file}") from e
+            logger.error(f"Model load unsuccessful: /{model_file}")
+            raise RuntimeError(f"Model load unsuccessful: /{model_file}") from e
 
 
 class ModelResults:
@@ -557,18 +557,18 @@ class ModelResults:
         self.data.index.name = "epochs"
         self.name = name
         self.filename = filename.with_suffix(".csv")
-        logger.info(f"Results filename: {self.filename}")
+        logger.info(f"Results filename: /{self.filename}")
 
     def save(self) -> None:
         self.data.to_csv(self.filename, index_label="epochs")
-        logger.info(f"Results saved to: {self.filename}")
+        logger.info(f"Results saved to: /{self.filename}")
 
     def load(self, filename: str) -> None:
         try:
             self.data = pd.read_csv(filename, index_col="epochs")
-            logger.info(f"Results loaded from {filename}")
+            logger.info(f"Results loaded from /{filename}")
         except Exception as e:
-            logger.error(f"Load results unsuccessful: {filename}")
+            logger.error(f"Load results unsuccessful: /{filename}")
             raise RuntimeError("Load results unsuccessful: {filename}") from e
 
     def plot(self) -> None:
