@@ -80,7 +80,9 @@ class CustomImageDataLoader(dict):
         label_col: str,
         transform: dict = None,
         target_transform: dict = None,
+        num_workers: int = -1,
     ) -> None:
+        self.num_workers = num_workers
         for k, v in dataset.items():
             self.update(
                 {
@@ -94,15 +96,17 @@ class CustomImageDataLoader(dict):
             )
         logger.info("CustomImageDataSet created")
 
-    def create_dataloaders(self, batch_size: int, num_workers: int = 16) -> None:
-        if num_workers == -1:
-            num_workers = multiprocessing.cpu_count()
-            logger.info(f"Setting dataloader subprocesses to {num_workers}")
+    def create_dataloaders(self, batch_size: int) -> None:
+        if self.num_workers == -1:
+            self.num_workers = multiprocessing.cpu_count()
+            logger.info(f"Setting dataloader subprocesses to {self.num_workers}")
         else:
-            logger.warning(f"Setting dataloader subprocesses manually to {num_workers}")
+            logger.warning(
+                f"Setting dataloader subprocesses manually to {self.num_workers}"
+            )
         tmp_dict: dict = {
             k.split("_")[0]: DataLoader(
-                v, batch_size=batch_size, shuffle=True, num_workers=num_workers
+                v, batch_size=batch_size, shuffle=True, num_workers=self.num_workers
             )
             for k, v in self.items()
         }
