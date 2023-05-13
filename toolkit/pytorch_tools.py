@@ -14,6 +14,10 @@ import multiprocessing
 
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import Normalizer
+from sklearn.ensemble import IsolationForest
+from sklearn.inspection import DecisionBoundaryDisplay
 
 import torch
 import torch.cuda as cuda
@@ -21,7 +25,6 @@ import torch.cuda as cuda
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 
-# from torchvision.io import read_image
 from PIL import Image
 from torchvision.transforms.functional import to_tensor
 from torchvision.models import vgg19
@@ -363,7 +366,7 @@ class AutoEncoder(nn.Module):
             self.path.mkdir(parents=True)
             logger.info(f"Folder created: /{self.path}")
         self.update_filename()
-        self.results = ModelResults(name=self.name, filename=self.filename)
+        self.results = AutoEncoderResults(name=self.name, filename=self.filename)
 
         logger.info(f"AutoEncoder constructed: {self.name}")
         logger.info(self)
@@ -374,14 +377,24 @@ class AutoEncoder(nn.Module):
         out = self.decoder(out)
         return out
 
-    def predict(self, img: str, transform: Compose) -> Tensor:
-        img = to_tensor(Image.open(img))
-        transformed_img = transform(img)
-        transformed_img = unsqueeze(transformed_img, 0)
-        transformed_img = transformed_img.to(self.dev)
-        self.eval()
-        with torch.no_grad():
-            out = self(transformed_img)
+    def predict(
+        self, images: List[str], transform: Compose, plot: bool = False
+    ) -> List[Tensor]:
+        out = []
+        for image in images:
+            image = Image.open(image)
+            img = transform(to_tensor(img))
+            img = unsqueeze(img, 0)
+            img = img.to(self.dev)
+            self.eval()
+            with torch.no_grad():
+                out.append(self(img))
+            if plot:
+                fig, ax = plt.subplots(1, 2, figsize=(10, 6))
+                ax[0].imshow(image)
+                ax[1].imshow(out[-1].squeeze().permute(1, 2, 0).cpu().detach().numpy())
+                fig.suptitle(image)
+                plt.show()
         return out
 
     def train_net(
@@ -459,7 +472,9 @@ class AutoEncoder(nn.Module):
                 feature_vectors[i].append(res.flatten().cpu().detach().numpy())
         return feature_vectors, loss
 
-    def plot_feature_vectors(self, feature_vectors: List[np.ndarray], loss: np.ndarray):
+    def plot_feature_vectors(
+        self, feature_vectors: List[np.ndarray], loss: np.ndarray
+    ) -> None:
         pca = PCA(n_components=50)
         tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
         fig, ax = plt.subplots(2, 2, figsize=(8, 6), sharex=True, sharey=True, dpi=400)
@@ -547,7 +562,7 @@ class AutoEncoder(nn.Module):
             raise RuntimeError(f"Model load unsuccessful: /{model_file}") from e
 
 
-class ModelResults:
+class AutoEncoderResults:
     logger.debug(f"INIT: {__qualname__}")
 
     def __init__(self, name: str, filename: Path) -> None:
@@ -589,4 +604,39 @@ class ModelResults:
         )
         fig.savefig(
             self.filename.with_stem(f"{self.filename.stem}_results").with_suffix(".png")
+        )
+
+
+class AnomalyDetector:
+    logger.debug(f"INIT: {__qualname__}")
+
+    def __init__(self, detector_type: str, n_jobs: int = -1) -> None:
+        self.type = detector_type
+        self.n_jobs = n_jobs
+        self.initialize()
+
+    def initialize(self) -> None:
+        if self.type == "IsolationForest":
+            self.pipeline = Pipeline(
+                steps=[
+                    ("scaler", Normalizer()),
+                    ("detector", IsolationForest(n_jobs=self.n_jobs)),
+                ]
+            )
+
+    def fit(self, X: pd.DataFrame) -> None:
+        self.pipeline.fit(X=X)
+
+    def predict(self, X: pd.DataFrame) -> pd.DataFrame:
+        anomaly_scores = self.pipeline.decision_function(X=X)
+        predictions = self.pipeline.predict(X=X)
+        return (
+            pd.DataFrame(
+                data={
+                    "outlier": predictions == -1,
+                    "anomaly_score": anomaly_scores,
+                }
+            )
+            .sort_values("anomaly_score")
+            .reset_index(names=["img_idx"])
         )
