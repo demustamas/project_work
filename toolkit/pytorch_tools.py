@@ -402,6 +402,7 @@ class AutoEncoder(nn.Module):
         epochs: int,
         train_loader: DataLoader,
         validation_loader: DataLoader = None,
+        save_freq: int = 0,
     ) -> None:
         logger.info("Model training started")
         for epoch in range(self.epochs, self.epochs + epochs):
@@ -445,6 +446,10 @@ class AutoEncoder(nn.Module):
                 f"Loss: {res_epoch['loss'][epoch]:7.4f} "
                 f"Validation loss: {res_epoch['validation_loss'][epoch]:7.4f}   "
             )
+
+            if save_freq and self.epochs % save_freq == 0:
+                self.save()
+                self.results.save()
 
     def calc_feature_vectors(
         self, dataset: pd.DataFrame, transform: Compose
