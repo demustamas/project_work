@@ -381,20 +381,28 @@ class AutoEncoder(nn.Module):
         self, images: List[str], transform: Compose, plot: bool = False
     ) -> List[Tensor]:
         out = []
-        for image in images:
-            image = Image.open(image)
-            img = transform(to_tensor(img))
+        for i, image in enumerate(images):
+            img_in = Image.open(image)
+            img = transform(to_tensor(img_in))
             img = unsqueeze(img, 0)
             img = img.to(self.dev)
             self.eval()
             with torch.no_grad():
                 out.append(self(img))
             if plot:
-                fig, ax = plt.subplots(1, 2, figsize=(10, 6))
-                ax[0].imshow(image)
-                ax[1].imshow(out[-1].squeeze().permute(1, 2, 0).cpu().detach().numpy())
-                fig.suptitle(image)
+                fig, axs = plt.subplots(1, 2, figsize=(10, 3), dpi=400)
+                axs[0].imshow(np.asarray(img_in))
+                axs[1].imshow(out[-1].squeeze().permute(1, 2, 0).cpu().detach().numpy())
+                for ax in axs:
+                    ax.set_xticks([])
+                    ax.set_yticks([])
+                axs[0].set_ylabel(image.split("/")[-1])
                 plt.show()
+                fig.savefig(
+                    self.filename.with_stem(
+                        f"{self.filename.stem}_predict_{i}"
+                    ).with_suffix(".png")
+                )
         return out
 
     def train_net(

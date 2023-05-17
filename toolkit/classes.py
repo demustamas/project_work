@@ -12,6 +12,8 @@ from sklearn.model_selection import train_test_split
 from pathlib import Path
 import gc
 
+from tqdm.notebook import tqdm
+
 from typing import List, Dict
 
 
@@ -27,6 +29,8 @@ class ImageDataFrame(pd.DataFrame):
         for idx in idxs:
             _, ax = plt.subplots(1, 1, figsize=(15, 10), tight_layout=True, dpi=400)
             ax.imshow(Image.open(self.iloc[idx].img))
+            ax.set_xticks([])
+            ax.set_yticks([])
             ax.set_ylabel(f"{idx}")
             plt.show()
 
@@ -58,7 +62,9 @@ class DataFrameCreator(dict):
     def load_dataset(self, sample_dir: str, labels: Dict) -> None:
         for label, encode in labels.items():
             src = Path(sample_dir) / label
-            for e, entity in enumerate(src.iterdir()):
+            for e, entity in tqdm(
+                enumerate(src.iterdir()), total=len(list(src.rglob("*")))
+            ):
                 if entity.is_file():
                     df = pd.DataFrame(
                         {
