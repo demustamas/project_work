@@ -17,7 +17,7 @@ from sklearn.manifold import TSNE
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import Normalizer
 from sklearn.ensemble import IsolationForest
-from sklearn.inspection import DecisionBoundaryDisplay
+from sklearn.metrics import ConfusionMatrixDisplay
 
 import torch
 import torch.cuda as cuda
@@ -486,12 +486,21 @@ class AutoEncoder(nn.Module):
         return feature_vectors, loss
 
     def plot_feature_vectors(
-        self, feature_vectors: List[np.ndarray], loss: np.ndarray
+        self,
+        feature_vectors: List[np.ndarray],
+        loss: np.ndarray,
+        labels: pd.Series,
     ) -> None:
         pca = PCA(n_components=50)
         tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
-        fig, ax = plt.subplots(2, 2, figsize=(8, 6), sharex=True, sharey=True, dpi=400)
-        ax = ax.flatten()
+        fig1, ax1 = plt.subplots(
+            2, 2, figsize=(8, 6), sharex=True, sharey=True, dpi=400
+        )
+        ax1 = ax1.flatten()
+        fig2, ax2 = plt.subplots(
+            2, 2, figsize=(8, 6), sharex=True, sharey=True, dpi=400
+        )
+        ax2 = ax2.flatten()
         titles = ["inputs", "encoded", "filter_matched", "decoded"]
         for v, vector in enumerate(feature_vectors):
             vector = np.array(vector)
@@ -503,24 +512,60 @@ class AutoEncoder(nn.Module):
                 y=1,
                 hue=loss,
                 palette="Purples",
-                ax=ax[v],
+                ax=ax1[v],
                 legend=False,
             )
-            ax[v].set_xlabel(None)
-            ax[v].set_ylabel(None)
-            ax[v].set_title(titles[v])
+            sns.scatterplot(
+                data=res_tsne,
+                x=0,
+                y=1,
+                hue=labels,
+                ax=ax2[v],
+                legend=False,
+            )
+            for ax in [ax1, ax2]:
+                ax[v].set_xlabel(None)
+                ax[v].set_ylabel(None)
+                ax[v].set_title(titles[v])
+
         norm = plt.Normalize(min(loss), max(loss))
         sm = plt.cm.ScalarMappable(cmap="Purples", norm=norm)
         sm.set_array([])
-        fig.colorbar(sm, ax=ax, location="bottom", aspect=50, pad=0.07)
+        fig1.colorbar(sm, ax=ax1, location="bottom", aspect=50, pad=0.07)
+        hand, lab = ax2[0].get_legend_handles_labels()
+        fig2.legend(hand, lab, loc="lower center")
         plt.show()
-        fig.savefig(
+
+        fig1.savefig(
             self.filename.with_stem(
                 f"{self.filename.stem}_feature_vectors"
             ).with_suffix(".png")
         )
-        fig, ax = plt.subplots(1, 1, figsize=(15, 6), dpi=400)
-        sns.lineplot(loss, ax=ax)
+        fig2.savefig(
+            self.filename.with_stem(
+                f"{self.filename.stem}_feature_vectors_2"
+            ).with_suffix(".png")
+        )
+
+        fig, ax = plt.subplots(
+            2, 1, figsize=(15, 6), dpi=400, height_ratios=[5, 1], sharex=True
+        )
+        sns.lineplot(loss, ax=ax[0])
+        cats = labels.unique().tolist()
+        cats.remove("normal")
+        colors = iter(plt.cm.Dark2(np.arange(len(cats))))
+        for cat in cats:
+            ax[1].vlines(
+                x=labels[labels == cat].index,
+                ymin=0,
+                ymax=1,
+                colors=next(colors),
+                linestyles="dashed",
+                label=cat,
+            )
+        ax[1].set_ylabel(None)
+        ax[1].set_yticks([])
+        ax[1].legend()
         plt.show()
         fig.savefig(
             self.filename.with_stem(
@@ -579,7 +624,7 @@ class AutoEncoderResults:
     logger.debug(f"INIT: {__qualname__}")
 
     def __init__(self, name: str, filename: Path) -> None:
-        self.data: pd.DataFrame = pd.DataFrame(
+        self.data = pd.DataFrame(
             columns=["loss", "validation_loss"],
         )
         self.data.index.name = "epochs"
@@ -623,33 +668,69 @@ class AutoEncoderResults:
 class AnomalyDetector:
     logger.debug(f"INIT: {__qualname__}")
 
-    def __init__(self, detector_type: str, n_jobs: int = -1) -> None:
-        self.type = detector_type
+    def __init__(
+        self,
+        feature_vectors: np.ndarray,
+        losses: np.ndarray,
+        labels: np.ndarray,
+        n_jobs: int = -1,
+    ) -> None:
+        self.feature_vectors = feature_vectors
+        self.losses = losses
         self.n_jobs = n_jobs
-        self.initialize()
+        self.results = AnomalyDetectorResults(labels=labels)
 
-    def initialize(self) -> None:
-        if self.type == "IsolationForest":
-            self.pipeline = Pipeline(
-                steps=[
-                    ("scaler", Normalizer()),
-                    ("detector", IsolationForest(n_jobs=self.n_jobs)),
-                ]
-            )
+        self.threshold = 3
+        self.forest_pipeline = Pipeline(
+            steps=[
+                ("scaler", Normalizer()),
+                ("detector", IsolationForest(n_jobs=self.n_jobs)),
+            ]
+        )
 
-    def fit(self, X: pd.DataFrame) -> None:
-        self.pipeline.fit(X=X)
+    def fit(self) -> None:
+        self.loss_threshold = np.mean(self.losses) + self.threshold * np.std(
+            self.losses
+        )
+        self.forest_pipeline.fit(X=self.feature_vectors)
 
-    def predict(self, X: pd.DataFrame) -> pd.DataFrame:
-        anomaly_scores = self.pipeline.decision_function(X=X)
-        predictions = self.pipeline.predict(X=X)
-        return (
-            pd.DataFrame(
-                data={
-                    "outlier": predictions == -1,
-                    "anomaly_score": anomaly_scores,
-                }
-            )
-            .sort_values("anomaly_score")
-            .reset_index(names=["img_idx"])
+    def predict(self) -> None:
+        self.results.loss_based = pd.DataFrame(
+            data={
+                "outlier": self.losses >= self.loss_threshold,
+                "anomaly_score": self.losses - self.loss_threshold,
+            }
+        )
+        anomaly_scores = self.forest_pipeline.decision_function(X=self.feature_vectors)
+        predictions = self.forest_pipeline.predict(X=self.feature_vectors)
+        self.results.isolation_forest = pd.DataFrame(
+            data={
+                "outlier": predictions == -1,
+                "anomaly_score": anomaly_scores,
+            }
+        )
+
+
+class AnomalyDetectorResults:
+    logger.debug(f"INIT: {__qualname__}")
+
+    def __init__(self, labels: np.ndarray):
+        self.y_true = labels != "normal"
+        self.isolation_forest = pd.DataFrame(columns=["outlier", "anomaly_score"])
+        self.loss_based = pd.DataFrame(columns=["outlier", "anomaly_score"])
+
+    def confusion_matrix(self) -> None:
+        fig, ax = plt.subplots(1, 2, figsize=(10, 6), dpi=400)
+        ConfusionMatrixDisplay.from_predictions(
+            self.y_true, self.loss_based["outlier"], ax=ax[0]
+        )
+        ax[0].set_title("Loss based")
+        ConfusionMatrixDisplay.from_predictions(
+            self.y_true, self.isolation_forest["outlier"], ax=ax[1]
+        )
+        ax[1].set_title("Isolarion Forest")
+        fig.savefig(
+            self.filename.with_stem(
+                f"{self.filename.stem}_confusion_matrix"
+            ).with_suffix(".png")
         )

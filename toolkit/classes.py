@@ -83,7 +83,7 @@ class DataFrameCreator(dict):
                     logger.critical(f"Unknown entity type: {entity}")
                     raise TypeError(f"Unknown entity type: {entity}")
             logger.info(f"Images loaded from {sample_dir} with label {label}")
-        self["dataset"].sort_values(by=["img"], inplace=True)
+        self["dataset"].sort_values(by=["img_file"], inplace=True)
         self["dataset"].reset_index(drop=True, inplace=True)
 
     def split_dataset(self, val_rate: float = 0.2, test_rate: float = 0.1) -> None:
