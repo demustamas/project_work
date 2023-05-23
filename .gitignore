@@ -4,4 +4,6 @@ results/
 tex_refs/project_work.bib.sav
 data/
 .ipynb_checkpoints/
-project_work.html
+build/
+htmls/
+indent.log
