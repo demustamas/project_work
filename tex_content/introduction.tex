@@ -46,7 +46,11 @@ validation dataset preventing of any generalization to the test dataset.
 
 As a followup a search for a more extended dataset and more refined models were started.
 
-\subsection{Data provided by MÁV KFV Kft.}
+\subsection{MÁV KFV Kft.}
+
+HISTORY!!!
+
+
 The company MÁV Central Rail And Track Inspection Ltd. (MÁV KFV Kft.) \cite{_mav_} was approached
 as they are proficient in railway track inspection and have the equipment and data that could be used
 for building such classifier model.
@@ -71,42 +75,4 @@ approach.
     \end{subfigure}
     \caption{Railway inspection vehicles of MÁV KFV Kft.}
     \label{fig:vehicles}
-\end{figure}
-
-This system records both rails from two angles resulting in four video footages parallel.
-A single footage was selected as it provides a static positioning relative to the tracks with good
-protection against changes of the lightning of the surroundings.
-The video system records with a resolution of 720x288 (width x height) with RGB channels
-at an 50 fps rate.
-Some examples of the images extracted from the video is shown on Figure \ref{fig:example_images}.
-
-\begin{figure}[!ht]
-    \centering
-    \begin{subfigure}{0.3\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{./data/sd1_sample/normal/img_00006.jpg}
-        \caption*{Normal rail}
-    \end{subfigure}
-    \begin{subfigure}{0.3\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{./data/sd1_sample/normal/img_00723.jpg}
-        \caption*{Normal rail}
-    \end{subfigure}
-    \begin{subfigure}{0.3\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{./data/sd1_sample/normal/img_04857.jpg}
-        \caption*{Normal rail}
-    \end{subfigure}
-    \begin{subfigure}{0.3\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{./data/sd1_sample/grass/img_05649.jpg}
-        \caption*{Rails covered with grass}
-    \end{subfigure}
-    \begin{subfigure}{0.3\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{./data/sd1_sample/double_rail/img_05676.jpg}
-        \caption*{Double rails}
-    \end{subfigure}
-    \caption{Sample images from the dataset}
-    \label{fig:example_images}
 \end{figure}
