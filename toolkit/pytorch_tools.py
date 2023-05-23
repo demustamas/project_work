@@ -39,6 +39,7 @@ from torch import Tensor
 from torch import save
 from torch import load
 from torch.optim import Adam
+from torch.optim.lr_scheduler import StepLR
 
 from typing import Iterable, Tuple, Union, List
 
@@ -356,7 +357,8 @@ class AutoEncoder(nn.Module):
 
         self.loss_fn = nn.MSELoss()
         self.loss = 0
-        self.optimizer = Adam(self.parameters(), lr=5e-6)
+        self.optimizer = Adam(self.parameters(), lr=1e-3)
+        self.scheduler = StepLR(self.optimizer, step_size=20, gamma=0.5, verbose=True)
         self.epochs = 0
         self.dev: str = None
         self.path = Path(f"./results/{self.name}/")
@@ -410,10 +412,13 @@ class AutoEncoder(nn.Module):
         epochs: int,
         train_loader: DataLoader,
         validation_loader: DataLoader = None,
+        batch_group: int = 1,
         save_freq: int = 0,
     ) -> None:
         logger.info("Model training started")
-        for epoch in range(self.epochs, self.epochs + epochs):
+        start = self.epochs
+        end = self.epochs + epochs
+        for epoch in range(start, end):
             res_epoch: pd.DataFrame = pd.DataFrame(
                 data={
                     "loss": 0.0,
@@ -422,13 +427,15 @@ class AutoEncoder(nn.Module):
                 index=[epoch],
             )
             self.train()
-            for inputs, _ in tqdm(train_loader):
+            for i, (inputs, _) in enumerate(tqdm(train_loader)):
                 inputs = inputs.to(self.dev)
                 outputs = self(inputs)
                 self.loss = self.loss_fn(squeeze(outputs), squeeze(inputs))
-                self.optimizer.zero_grad()
                 self.loss.backward()
-                self.optimizer.step()
+
+                if ((i + 1) % batch_group == 0) or ((i + 1) == len(train_loader)):
+                    self.optimizer.step()
+                    self.optimizer.zero_grad(set_to_none=True)
 
                 res_epoch["loss"].loc[epoch] += self.loss.item()
 
@@ -447,7 +454,6 @@ class AutoEncoder(nn.Module):
             res_epoch["validation_loss"].loc[epoch] /= len(validation_loader)
 
             self.results.data = pd.concat([self.results.data, res_epoch])
-            self.epochs += 1
 
             logger.info(
                 f"Epoch: {epoch:4d} "
@@ -455,9 +461,12 @@ class AutoEncoder(nn.Module):
                 f"Validation loss: {res_epoch['validation_loss'][epoch]:7.4f}   "
             )
 
-            if save_freq and self.epochs % save_freq == 0:
+            if save_freq and (self.epochs + 1) % save_freq == 0:
                 self.save()
                 self.results.save()
+
+            self.scheduler.step()
+            self.epochs += 1
 
     def calc_feature_vectors(
         self, dataset: pd.DataFrame, transform: Compose
@@ -511,7 +520,8 @@ class AutoEncoder(nn.Module):
                 x=0,
                 y=1,
                 hue=loss,
-                palette="Purples",
+                alpha=np.array(loss) / max(loss),
+                palette="rainbow",
                 ax=ax1[v],
                 legend=False,
             )
@@ -520,8 +530,10 @@ class AutoEncoder(nn.Module):
                 x=0,
                 y=1,
                 hue=labels,
+                alpha=np.array(loss) / max(loss),
+                palette="Dark2",
                 ax=ax2[v],
-                legend=False,
+                legend=True,
             )
             for ax in [ax1, ax2]:
                 ax[v].set_xlabel(None)
@@ -529,11 +541,13 @@ class AutoEncoder(nn.Module):
                 ax[v].set_title(titles[v])
 
         norm = plt.Normalize(min(loss), max(loss))
-        sm = plt.cm.ScalarMappable(cmap="Purples", norm=norm)
+        sm = plt.cm.ScalarMappable(cmap="rainbow", norm=norm)
         sm.set_array([])
         fig1.colorbar(sm, ax=ax1, location="bottom", aspect=50, pad=0.07)
         hand, lab = ax2[0].get_legend_handles_labels()
-        fig2.legend(hand, lab, loc="lower center")
+        for ax in ax2:
+            ax.get_legend().remove()
+        fig2.legend(hand, lab, loc="lower center", ncols=len(lab))
         plt.show()
 
         fig1.savefig(
@@ -550,7 +564,7 @@ class AutoEncoder(nn.Module):
         fig, ax = plt.subplots(
             2, 1, figsize=(15, 6), dpi=400, height_ratios=[5, 1], sharex=True
         )
-        sns.lineplot(loss, ax=ax[0])
+        sns.lineplot(loss, ax=ax[0], label="loss")
         cats = labels.unique().tolist()
         cats.remove("normal")
         colors = iter(plt.cm.Dark2(np.arange(len(cats))))
@@ -560,7 +574,6 @@ class AutoEncoder(nn.Module):
                 ymin=0,
                 ymax=1,
                 colors=next(colors),
-                linestyles="dashed",
                 label=cat,
             )
         ax[1].set_ylabel(None)
@@ -670,6 +683,7 @@ class AnomalyDetector:
 
     def __init__(
         self,
+        filename: Path,
         feature_vectors: np.ndarray,
         losses: np.ndarray,
         labels: np.ndarray,
@@ -678,7 +692,7 @@ class AnomalyDetector:
         self.feature_vectors = feature_vectors
         self.losses = losses
         self.n_jobs = n_jobs
-        self.results = AnomalyDetectorResults(labels=labels)
+        self.results = AnomalyDetectorResults(labels=labels, filename=filename)
 
         self.threshold = 3
         self.forest_pipeline = Pipeline(
@@ -714,21 +728,36 @@ class AnomalyDetector:
 class AnomalyDetectorResults:
     logger.debug(f"INIT: {__qualname__}")
 
-    def __init__(self, labels: np.ndarray):
+    def __init__(self, labels: np.ndarray, filename: str):
+        self.filename = filename
         self.y_true = labels != "normal"
         self.isolation_forest = pd.DataFrame(columns=["outlier", "anomaly_score"])
         self.loss_based = pd.DataFrame(columns=["outlier", "anomaly_score"])
 
     def confusion_matrix(self) -> None:
-        fig, ax = plt.subplots(1, 2, figsize=(10, 6), dpi=400)
-        ConfusionMatrixDisplay.from_predictions(
-            self.y_true, self.loss_based["outlier"], ax=ax[0]
+        detectors = {
+            "Loss based": self.loss_based,
+            "Isolation Forest": self.isolation_forest,
+        }
+        fig, ax = plt.subplots(
+            1,
+            len(detectors.keys()),
+            figsize=(4 * len(detectors.keys()), 4),
+            dpi=400,
+            tight_layout=True,
         )
-        ax[0].set_title("Loss based")
-        ConfusionMatrixDisplay.from_predictions(
-            self.y_true, self.isolation_forest["outlier"], ax=ax[1]
-        )
-        ax[1].set_title("Isolarion Forest")
+        for i, (k, v) in enumerate(detectors.items()):
+            ConfusionMatrixDisplay.from_predictions(
+                self.y_true,
+                v["outlier"],
+                ax=ax[i],
+                cmap="copper",
+                colorbar=False,
+                normalize="all",
+                values_format=".2%",
+            )
+            ax[i].set_title(k)
+        plt.show()
         fig.savefig(
             self.filename.with_stem(
                 f"{self.filename.stem}_confusion_matrix"
