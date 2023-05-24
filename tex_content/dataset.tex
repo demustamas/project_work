@@ -1,4 +1,4 @@
-\section{The dataset}
+\section{The dataset} \label{dataset}
 The video system of the SDS vehicle records both rails from two angles resulting in four video footages
 parallel.
 A single footage was selected as it provides a static positioning relative to the tracks with good
@@ -6,6 +6,10 @@ protection against changes of the lightning of the surroundings.
 The video system records with a resolution of 720x288 (width x height) with RGB channels
 at 50 fps rate.
 Some examples of the images extracted from the video is shown on Figure \ref{fig:example_images}.
+
+A single footage sample video of approximately 3 minutes was provided as a starting point.
+This video contains a side view of a rail, that is defined as \emph{normal} rail
+along with a few seconds of rail covered with grass of showing a double rail section.
 
 \begin{figure}[!ht]
     \centering
@@ -37,3 +41,38 @@ Some examples of the images extracted from the video is shown on Figure \ref{fig
     \caption{Sample images from the dataset}
     \label{fig:example_images}
 \end{figure}
+
+This sample video was sliced to images, resulting in the dataset shown in Table \ref{table:dataset}.
+The resulting dataset is imbalanced, and the so-called outliers can be easily identified.
+In general annotation can not be assumed for such problems, however in this case it was
+provided manually to grant performance evaluation possibility.
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{l c}
+        Image type              & Number of images \\
+        \hline
+        Normal rail             & 8640             \\
+        Rail covered with grass & 64               \\
+        Double rails            & 29               \\
+        \hline
+        Total                   & 8733             \\
+    \end{tabular}
+    \caption{Dataset obtained from sample video}
+    \label{table:dataset}
+\end{table}
+
+There is no slurring observed on the images that is remarkable considering that the video is taken
+with a vehicle speed up to 80 to 100 kilometer per hour.
+However a slight fisheye distortion can be seen that is noticeable mostly in the rail itself,
+as it is not tend to follow a stright line, a small bending effect is given.
+Also the lighting of the pictures result in a brighter spot on the center.
+The image quality remains stable in the sample video, including the illuminance that is
+secured by the shrouds applied on the vehicle around the cameras.
+
+During modeling besides augmentation no image manipulations were applied
+except the normalization during entering the neural network.
+
+Later on the course of the work MÁV CRTI Ltd. provided further videos from both vehicles
+ranging up to 450 GB of raw data that can be used for further training, evaluating or tuning
+the models.
