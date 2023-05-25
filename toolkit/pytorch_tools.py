@@ -131,7 +131,7 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
         self.name = name
         try:
-            if self.name in {"VGG19", "EfficientNetV2L"}:
+            if self.name in {"VGG19", "VGG19_bn", "EfficientNetV2L"}:
                 self.encoder = self.implemented_models[self.name](
                     weights=weights
                 ).features
