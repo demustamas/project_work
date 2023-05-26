@@ -1,7 +1,12 @@
 logs/
 toolkit/__pycache__
-results/
 tex_refs/project_work.bib.sav
 data/
 .ipynb_checkpoints/
 project_work.html
+results/efficientnetv2l_vgg19_batch2/
+results/vgg19_vgg19_batch16_lrsched/
+results/efficientnetv2l_vgg19/20230525_194238.pth
+results/resnet50_vgg19/20230514_213740.pth
+results/vgg19_bn_vgg19/20230525_045131.pth
+results/vgg19_vgg19/20230510_172958.pth
