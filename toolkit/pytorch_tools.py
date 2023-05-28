@@ -469,7 +469,7 @@ class AutoEncoder(nn.Module):
             self.epochs += 1
 
     def calc_feature_vectors(
-        self, dataset: pd.DataFrame, transform: Compose
+        self, dataset: pd.DataFrame, transform: Compose, save: bool = False
     ) -> Tuple[List[np.ndarray], np.ndarray]:
         feature_vectors = [[], [], [], []]
         loss = []
@@ -492,6 +492,9 @@ class AutoEncoder(nn.Module):
                 [transformed_img, encoded, filter_matched, decoded]
             ):
                 feature_vectors[i].append(res.flatten().cpu().detach().numpy())
+            if save:
+                df = pd.DataFrame(data={"loss": loss})
+                df.to_csv(self.filename.with_stem(f"{self.filename.stem}_losses"))
         return feature_vectors, loss
 
     def plot_feature_vectors(
@@ -510,6 +513,10 @@ class AutoEncoder(nn.Module):
             2, 2, figsize=(8, 6), sharex=True, sharey=True, dpi=400
         )
         ax2 = ax2.flatten()
+        fig3, ax3 = plt.subplots(
+            2, 2, figsize=(8, 6), sharex=True, sharey=True, dpi=400
+        )
+        ax3 = ax3.flatten()
         titles = ["inputs", "encoded", "filter_matched", "decoded"]
         for v, vector in enumerate(feature_vectors):
             vector = np.array(vector)
@@ -535,7 +542,17 @@ class AutoEncoder(nn.Module):
                 ax=ax2[v],
                 legend=True,
             )
-            for ax in [ax1, ax2]:
+            sns.scatterplot(
+                data=res_tsne,
+                x=0,
+                y=1,
+                hue=res_tsne.index,
+                alpha=0.5,
+                palette="Dark2",
+                ax=ax3[v],
+                legend=False,
+            )
+            for ax in [ax1, ax2, ax3]:
                 ax[v].set_xlabel(None)
                 ax[v].set_ylabel(None)
                 ax[v].set_title(titles[v])
@@ -544,22 +561,24 @@ class AutoEncoder(nn.Module):
         sm = plt.cm.ScalarMappable(cmap="rainbow", norm=norm)
         sm.set_array([])
         fig1.colorbar(sm, ax=ax1, location="bottom", aspect=50, pad=0.07)
+
         hand, lab = ax2[0].get_legend_handles_labels()
         for ax in ax2:
             ax.get_legend().remove()
         fig2.legend(hand, lab, loc="lower center", ncols=len(lab))
+
+        norm = plt.Normalize(min(res_tsne.index), max(res_tsne.index))
+        sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
+        sm.set_array([])
+        fig3.colorbar(sm, ax=ax1, location="bottom", aspect=50, pad=0.07)
         plt.show()
 
-        fig1.savefig(
-            self.filename.with_stem(
-                f"{self.filename.stem}_feature_vectors"
-            ).with_suffix(".png")
-        )
-        fig2.savefig(
-            self.filename.with_stem(
-                f"{self.filename.stem}_feature_vectors_2"
-            ).with_suffix(".png")
-        )
+        for f, fig in enumerate([fig1, fig2, fig3]):
+            fig.savefig(
+                self.filename.with_stem(
+                    f"{self.filename.stem}_feature_vectors_{f}"
+                ).with_suffix(".png")
+            )
 
         fig, ax = plt.subplots(
             2, 1, figsize=(15, 6), dpi=400, height_ratios=[5, 1], sharex=True
@@ -731,35 +750,38 @@ class AnomalyDetectorResults:
     def __init__(self, labels: np.ndarray, filename: str):
         self.filename = filename
         self.y_true = labels != "normal"
-        self.isolation_forest = pd.DataFrame(columns=["outlier", "anomaly_score"])
-        self.loss_based = pd.DataFrame(columns=["outlier", "anomaly_score"])
-
-    def confusion_matrix(self) -> None:
-        detectors = {
-            "Loss based": self.loss_based,
-            "Isolation Forest": self.isolation_forest,
+        self.data = {
+            "loss_based": pd.DataFrame(columns=["outlier", "anomaly_score"]),
+            "isolation_forest": pd.DataFrame(columns=["outlier", "anomaly_score"]),
         }
-        fig, ax = plt.subplots(
-            1,
-            len(detectors.keys()),
-            figsize=(4 * len(detectors.keys()), 4),
-            dpi=400,
-            tight_layout=True,
-        )
-        for i, (k, v) in enumerate(detectors.items()):
+
+    def confusion_matrix(self, detectors: List[str] = None) -> None:
+        if detectors is None:
+            detectors = self.data.keys()
+        for detector in detectors:
+            fig, ax = plt.subplots(
+                1,
+                1,
+                figsize=(4, 4),
+                dpi=400,
+            )
             ConfusionMatrixDisplay.from_predictions(
                 self.y_true,
-                v["outlier"],
-                ax=ax[i],
+                self.data[detector]["outlier"],
+                ax=ax,
                 cmap="copper",
                 colorbar=False,
                 normalize="all",
                 values_format=".2%",
             )
-            ax[i].set_title(k)
-        plt.show()
-        fig.savefig(
-            self.filename.with_stem(
-                f"{self.filename.stem}_confusion_matrix"
-            ).with_suffix(".png")
-        )
+            ax.set_title(detector)
+            plt.show()
+            fig.savefig(
+                self.filename.with_stem(
+                    f"{self.filename.stem}_{detector}_cm"
+                ).with_suffix(".png")
+            )
+
+    def save(self) -> None:
+        for k, v in self.data.items():
+            v.to_csv(self.filename.with_stem(f"{self.filename.stem}_{k}_data"))

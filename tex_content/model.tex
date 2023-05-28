@@ -99,6 +99,12 @@ shall be higher in latter case as the \emph{abnormal} part of the image can not 
 The definition of the loss (or distance between original and replicated image) plays an important
 role in the detection.
 
+In current approach the loss function is set as the pixelwise mean squared error of the input
+and the decoded image.
+The threshold to designate an image as outlier is to have higher loss value
+(distance between input and output image) than the mean loss overall the whole dataset and
+three times the standard deviation added together.
+
 The second approach that we utilize the representation of the images and trace back the outlier
 detection to the latent space.
 The represenation created by the encoder shall bear all the key characteristics of the images,
@@ -106,6 +112,9 @@ if an image contains a certain defect (and thus becomes an outlier), then it's r
 shall be an outlier as well.
 This method allows to introduce several tools for detecting the outlier vector,
 such as Isolation Forest or any basic clustering methods (DBSCAN, OPTICS, etc.).
+
+Our research focused on the Isolation Forest, that was applied on the latent space with default
+settings.
 
 \subsection{Model training}
 Transfer learning is applied in case of the Encoders to ensure an efficient approach,
@@ -115,9 +124,18 @@ of the network, there only a random initialization was used.
 
 The loss function is defined as pixelwise mean squared loss between the original and replicated
 images.
+Adam optimizer is applied with a learning rate of $5e-6$.
+The batch size for training is set to 8.
 
 The dataset is splitted to \emph{train}, \emph{validation} and \emph{test} set, considering the
 imbalance nature of the dataset, during split a stratified approach was applied.
+The training of the models were done on the \emph{train} dataset,
+the \emph{validation} set was used to monitor how well the model generalize and to detect possible
+overfitting or other training issues.
+The \emph{test} dataset was used for independent analysis of the model, how the results presented
+in Section \ref{results} is interpreted over the whole dataset offering the opportunity to compare 
+which images detected as outliers (or missed) by the different detectors models (loss based or
+Isolation Forest). 
 
 \subsection{Performance evaluation}
 The first approach on the performance evaluation is the general classification metrics based on
