@@ -1,1 +1,35 @@
 \section{Software implementation} \label{sw_code}
+The project is stored at \url{https://github.com/demustamas/project_work}.
+The basic folder and file structure is as follows:
+
+\begin{enumerate}
+    \item \lstinline{./build} - Build directory of \LaTeX, contains project documentation
+    \item \lstinline{./data} - Contains the dataset (not available on GitHub)
+    \item \lstinline{./results} - Contains resulting models, images, tables
+    \item \lstinline{./tex_content} - \LaTeX documentation files
+    \item \lstinline{./tex_images} - \LaTeX images for documentation
+    \item \lstinline{./tex_refs} - Style files, bibliography
+    \item \lstinline{./toolkit} - Contains main scripts
+    \item \lstinline{./toolkit/classes.py} - Class definitions for loading the dataset
+    \item \lstinline{./toolkit/pytorch_tools.py} - Class definitions for Pytorch
+    \item \lstinline{./project_work.ipynb} - Jupyter notebook project file
+    \item \lstinline{./project_work.tex} - Main \LaTeX documentation file
+    \item \lstinline{./video_slicer.ipynb} - Jupyter notebook used for slicing the videos to images
+\end{enumerate}
+
+Due to storage limitations the trained modelfiles and the original dataset is not uploaded to GitHub.
+
+The raw video files (binary files) were sliced using the \lstinline{video_slicer.ipynb}.
+The anomaly detection is then performed by \lstinline{project_work.ipynb} and the results,
+including trained models, extracted plot images, csv files are stored in \lstinline{./results}.
+
+The documentation is created in \LaTeX, the main file is \lstinline{project_work.tex},
+a final presentation will be stored under \lstinline{presentation.tex}.
+
+The main script files are \lstinline{classes.py} and \lstinline{pytorch_tools.py}.
+These contain the class definitions used to import the dataset, define the models
+of the Autoencoder and AnomalyDetector with the corresponding methods used for training,
+predicting and evaluating the results.
+
+The scripts are prepared to run either on CPU or on GPU, depending on the available IT infratsructure.
+The computation expensive steps were run on the servers of AI Research Group of Eötvös Lóránd University.
