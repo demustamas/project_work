@@ -381,7 +381,11 @@ class AutoEncoder(nn.Module):
         return out
 
     def predict(
-        self, images: List[str], transform: Compose, plot: bool = False
+        self,
+        images: List[str],
+        transform: Compose,
+        plot: bool = False,
+        save: bool = False,
     ) -> List[Tensor]:
         out = []
         for i, image in enumerate(images):
@@ -401,11 +405,12 @@ class AutoEncoder(nn.Module):
                     ax.set_yticks([])
                 axs[0].set_ylabel(image.split("/")[-1])
                 plt.show()
-                fig.savefig(
-                    self.filename.with_stem(
-                        f"{self.filename.stem}_predict_{i}"
-                    ).with_suffix(".png")
-                )
+                if save:
+                    fig.savefig(
+                        self.filename.with_stem(
+                            f"{self.filename.stem}_predict_{i}"
+                        ).with_suffix(".png")
+                    )
         return out
 
     def train_net(
@@ -728,7 +733,7 @@ class AnomalyDetector:
         self.forest_pipeline.fit(X=self.feature_vectors)
 
     def predict(self) -> None:
-        self.results.loss_based = pd.DataFrame(
+        self.results.data["loss_based"] = pd.DataFrame(
             data={
                 "outlier": self.losses >= self.loss_threshold,
                 "anomaly_score": self.losses - self.loss_threshold,
@@ -736,7 +741,7 @@ class AnomalyDetector:
         )
         anomaly_scores = self.forest_pipeline.decision_function(X=self.feature_vectors)
         predictions = self.forest_pipeline.predict(X=self.feature_vectors)
-        self.results.isolation_forest = pd.DataFrame(
+        self.results.data["isolation_forest"] = pd.DataFrame(
             data={
                 "outlier": predictions == -1,
                 "anomaly_score": anomaly_scores,
@@ -784,4 +789,9 @@ class AnomalyDetectorResults:
 
     def save(self) -> None:
         for k, v in self.data.items():
-            v.to_csv(self.filename.with_stem(f"{self.filename.stem}_{k}_data"))
+            v.to_csv(
+                self.filename.with_stem(f"{self.filename.stem}_{k}_data").with_suffix(
+                    ".csv"
+                ),
+                index_label="img_no",
+            )
