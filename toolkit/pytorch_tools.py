@@ -397,7 +397,9 @@ class AutoEncoder(nn.Module):
             with torch.no_grad():
                 out.append(self(img))
             if plot:
-                fig, axs = plt.subplots(1, 2, figsize=(10, 3), dpi=400)
+                fig, axs = plt.subplots(
+                    1, 2, figsize=(10, 3), dpi=400, tight_layour=True
+                )
                 axs[0].imshow(np.asarray(img_in))
                 axs[1].imshow(out[-1].squeeze().permute(1, 2, 0).cpu().detach().numpy())
                 for ax in axs:
@@ -498,8 +500,12 @@ class AutoEncoder(nn.Module):
             ):
                 feature_vectors[i].append(res.flatten().cpu().detach().numpy())
             if save:
-                df = pd.DataFrame(data={"loss": loss})
-                df.to_csv(self.filename.with_stem(f"{self.filename.stem}_losses"))
+                df = pd.DataFrame(data={"loss": loss}, index_label="img_no")
+                df.to_csv(
+                    self.filename.with_stem(f"{self.filename.stem}_losses").with_suffix(
+                        ".csv"
+                    )
+                )
         return feature_vectors, loss
 
     def plot_feature_vectors(
@@ -575,7 +581,7 @@ class AutoEncoder(nn.Module):
         norm = plt.Normalize(min(res_tsne.index), max(res_tsne.index))
         sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
         sm.set_array([])
-        fig3.colorbar(sm, ax=ax1, location="bottom", aspect=50, pad=0.07)
+        fig3.colorbar(sm, ax=ax3, location="bottom", aspect=50, pad=0.07)
         plt.show()
 
         for f, fig in enumerate([fig1, fig2, fig3]):
