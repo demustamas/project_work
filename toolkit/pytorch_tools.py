@@ -500,11 +500,12 @@ class AutoEncoder(nn.Module):
             ):
                 feature_vectors[i].append(res.flatten().cpu().detach().numpy())
             if save:
-                df = pd.DataFrame(data={"loss": loss}, index_label="img_no")
+                df = pd.DataFrame(data={"loss": loss})
                 df.to_csv(
                     self.filename.with_stem(f"{self.filename.stem}_losses").with_suffix(
                         ".csv"
-                    )
+                    ),
+                    index_label="img_no",
                 )
         return feature_vectors, loss
 
