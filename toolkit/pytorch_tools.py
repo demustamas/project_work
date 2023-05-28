@@ -28,6 +28,7 @@ from torch.utils.data import DataLoader
 from PIL import Image
 from torchvision.transforms.functional import to_tensor
 from torchvision.models import vgg19
+from torchvision.models import vgg19_bn
 from torchvision.models import resnet50
 from torchvision.models import efficientnet_v2_l
 from torchvision.transforms import Compose
@@ -39,7 +40,6 @@ from torch import Tensor
 from torch import save
 from torch import load
 from torch.optim import Adam
-from torch.optim.lr_scheduler import StepLR
 
 from typing import Iterable, Tuple, Union, List
 
@@ -122,6 +122,7 @@ class Encoder(nn.Module):
     logger.debug(f"INIT: {__qualname__}")
     implemented_models = {
         "VGG19": vgg19,
+        "VGG19_bn": vgg19_bn,
         "ResNet50": resnet50,
         "EfficientNetV2L": efficientnet_v2_l,
     }
@@ -130,7 +131,7 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
         self.name = name
         try:
-            if self.name in {"VGG19", "EfficientNetV2L"}:
+            if self.name in {"VGG19", "VGG19_bn", "EfficientNetV2L"}:
                 self.encoder = self.implemented_models[self.name](
                     weights=weights
                 ).features
@@ -305,6 +306,7 @@ class MatchFilters(nn.Module):
     logger.debug(f"INIT: {__qualname__}")
     implemented_models = {
         "VGG19": [512],
+        "VGG19_bn": [512],
         "ResNet50": [2048, 1024, 512],
         "EfficientNetV2L": [1280, 896, 512],
     }
@@ -357,8 +359,7 @@ class AutoEncoder(nn.Module):
 
         self.loss_fn = nn.MSELoss()
         self.loss = 0
-        self.optimizer = Adam(self.parameters(), lr=1e-3)
-        self.scheduler = StepLR(self.optimizer, step_size=20, gamma=0.5, verbose=True)
+        self.optimizer = Adam(self.parameters(), lr=5e-6)
         self.epochs = 0
         self.dev: str = None
         self.path = Path(f"./results/{self.name}/")
@@ -465,7 +466,6 @@ class AutoEncoder(nn.Module):
                 self.save()
                 self.results.save()
 
-            self.scheduler.step()
             self.epochs += 1
 
     def calc_feature_vectors(
