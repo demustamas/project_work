@@ -398,7 +398,7 @@ class AutoEncoder(nn.Module):
                 out.append(self(img))
             if plot:
                 fig, axs = plt.subplots(
-                    1, 2, figsize=(10, 3), dpi=400, tight_layour=True
+                    1, 2, figsize=(10, 3), dpi=400, tight_layout=True
                 )
                 axs[0].imshow(np.asarray(img_in))
                 axs[1].imshow(out[-1].squeeze().permute(1, 2, 0).cpu().detach().numpy())
