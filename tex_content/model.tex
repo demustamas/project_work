@@ -129,13 +129,13 @@ The batch size for training is set to 8.
 
 The dataset is splitted to \emph{train}, \emph{validation} and \emph{test} set, considering the
 imbalance nature of the dataset, during split a stratified approach was applied.
-The training of the models were done on the \emph{train} dataset,
+The training of the models were done on the \emph{train} dataset for $100$ epochs,
 the \emph{validation} set was used to monitor how well the model generalize and to detect possible
 overfitting or other training issues.
 The \emph{test} dataset was used for independent analysis of the model, how the results presented
-in Section \ref{results} is interpreted over the whole dataset offering the opportunity to compare 
+in Section \ref{results} is interpreted over the whole dataset offering the opportunity to compare
 which images detected as outliers (or missed) by the different detectors models (loss based or
-Isolation Forest). 
+Isolation Forest).
 
 \subsection{Performance evaluation}
 The first approach on the performance evaluation is the general classification metrics based on
