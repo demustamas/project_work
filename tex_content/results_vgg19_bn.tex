@@ -14,7 +14,7 @@ In this case the initial validation loss was also higher at start compared to th
 
 \begin{figure}[!ht]
     \centering
-    \includegraphics[width=\textwidth,trim={0 0 0 1cm},clip]{./results/vgg19_bn_vgg19/20230525_045131_results.png}
+    \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_bn_vgg19/20230525_045131_results.png}
     \caption{Learning curve of the VGG19 (BN) Encoder}
     \label{fig:vgg19_bn_learning_curve}
 \end{figure}
@@ -59,7 +59,7 @@ also an indication of a different model behavior.
 
 \begin{figure}[!ht]
     \centering
-    \includegraphics[width=\textwidth,trim={0 0 0 1cm},clip]{./results/vgg19_bn_vgg19/20230525_045131_feature_vectors_1.png}
+    \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_bn_vgg19/20230525_045131_feature_vectors_1.png}
     \caption{PCA / t-SNE visualization of the VGG19 (BN) Encoder}
     \label{fig:vgg19_bn_pca}
 \end{figure}
@@ -71,7 +71,7 @@ comparison of the loss values.
 
 \begin{figure}[!ht]
     \centering
-    \includegraphics[width=\textwidth]{./results/vgg19_bn_vgg19/20230525_045131_feature_vectors_loss.png}
+    \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_bn_vgg19/20230525_045131_feature_vectors_loss.png}
     \caption{Loss values of the dataset with VGG19 (BN) encoding}
     \label{fig:vgg19_bn_loss}
 \end{figure}
@@ -89,12 +89,12 @@ This reduction is significant in case of the false positive indications.
     \centering
     \begin{subfigure}{0.4\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{./results/vgg19_bn_vgg19/20230525_045131_loss_based_cm.png}
+        \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_bn_vgg19/20230525_045131_loss_based_cm.png}
     \end{subfigure}
     \begin{subfigure}{0.4\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{./results/vgg19_bn_vgg19/20230525_045131_isolation_forest_cm.png}
+        \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_bn_vgg19/20230525_045131_isolation_forest_cm.png}
     \end{subfigure}
-    \caption{Confusion Matrices of the VGG19 (BN) encoder}
+    \caption{Confusion Matrices of the VGG19 (BN) Encoder}
     \label{fig:vgg19_bn_cm}
 \end{figure}

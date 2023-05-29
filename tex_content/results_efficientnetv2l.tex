@@ -1,1 +1,62 @@
 \subsection{Encoding via EfficientNetV2L}
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/efficientnetv2l_vgg19/20230525_194238_results.png}
+    \caption{Learning curve of the EfficientNetV2L Encoder}
+    \label{fig:efficientnetv2l_learning_curve}
+\end{figure}
+
+
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=0.9\textwidth,trim={0 1cm 0 1cm},clip]{./results/efficientnetv2l_vgg19/20230525_194238_predict_0.png}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=0.9\textwidth,trim={0 1cm 0 1cm},clip]{./results/efficientnetv2l_vgg19/20230525_194238_predict_1.png}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=0.9\textwidth,trim={0 1cm 0 1cm},clip]{./results/efficientnetv2l_vgg19/20230525_194238_predict_2.png}
+    \end{subfigure}
+    \caption{Predicted images in case of EfficientNetV2L Encoder}
+    \label{fig:efficientnetv2l_examples}
+\end{figure}
+
+
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/efficientnetv2l_vgg19/20230525_194238_feature_vectors_1.png}
+    \caption{PCA / t-SNE visualization of the EfficientNetV2L Encoder}
+    \label{fig:efficientnetv2l_pca}
+\end{figure}
+
+
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/efficientnetv2l_vgg19/20230525_194238_feature_vectors_loss.png}
+    \caption{Loss values of the dataset with EfficientNetV2L encoding}
+    \label{fig:efficientnetv2l_loss}
+\end{figure}
+
+
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}{0.4\textwidth}
+        \centering
+        \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/efficientnetv2l_vgg19/20230525_194238_loss_based_cm.png}
+    \end{subfigure}
+    \begin{subfigure}{0.4\textwidth}
+        \centering
+        \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/efficientnetv2l_vgg19/20230525_194238_isolation_forest_cm.png}
+    \end{subfigure}
+    \caption{Confusion Matrices of the EfficientNetV2L Encoder}
+    \label{fig:efficientnetv2l_cm}
+\end{figure}
