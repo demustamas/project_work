@@ -1,10 +1,12 @@
 \subsection{Encoding via VGG19 with batch normalization}
 The batch normalization did not deliver a significant change to the characteristics of the learning
-curve as can be seen on Figure \ref{fig:vgg19_bn_learning_curve}.
+curves as can be seen on Figure \ref{fig:vgg19_bn_learning_curve}.
 Similar obesrvations can be done as for the model without batch normalization.
 After the first few epochs the loss values significantly decrease and continues getting reduced
 indicating that the model is capable to learn new features.
-Now overfitting or training issues can be seen, however the validation loss curve seem to show
+The train and validation losses run quite close to each other due to the many very similar images,
+and indicating a good represenation capability of the train dataset.
+No overfitting or training issues can be seen, however the validation loss curve seem to show
 slightly higher variance.
 At 100 epoch the loss value is slightly higher then it was with the VGG19 model.
 The difference is minor, normally the batch normalization shall decrease the learning times of a model,
@@ -14,7 +16,7 @@ In this case the initial validation loss was also higher at start compared to th
 
 \begin{figure}[!ht]
     \centering
-    \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_bn_vgg19/20230525_045131_results.png}
+    \includegraphics[width=\textwidth,trim={0 0 0 1cm},clip]{./results/vgg19_bn_vgg19/20230525_045131_results.png}
     \caption{Learning curve of the VGG19 (BN) Encoder}
     \label{fig:vgg19_bn_learning_curve}
 \end{figure}
@@ -22,9 +24,11 @@ In this case the initial validation loss was also higher at start compared to th
 The samples of the predicted images bear the some characteristics as it was seen on the VGG19 model.
 Some examples are given on Figure \ref{fig:vgg19_bn_examples}.
 More details are reconstructed in the center of the picture or in brighter part of the image.
-As basic feature, the main edge of the rail is also visible.
+As basic feature, the main edge of the rail is also visible together with the side surface.
+Smaller details such us outlines of ballast rocks are also captured to a certain extent.
 This shows that the introduction of batch normalization did not change significantly the quality of
 the decoded pictures.
+However still not recreating the whole image.
 
 \begin{figure}[!ht]
     \centering
@@ -47,10 +51,12 @@ the decoded pictures.
 A more interesting change can be identified on the PCA / t-SNE visualization on the
 Figure \ref{fig:vgg19_bn_pca}.
 The change of the cluster follows the same character as without batch normalization, but the separation
-of the outliers happens different.
+of the outliers happens in a different way.
 The outliers that were still part of the \emph{normal} cluster, close to the boundary, now show a more
-accented deviation based on their loss values, and some outliers are stucked deeper inside the clusters
-of the \emph{normal} images.
+accented deviation based on their loss values as can be seen on the top right part of the encoded phase.
+But some outliers are stucked deeper inside the clusters of the \emph{normal} images.
+This can be seen on the bottom left part of the encoded phase.
+The outliers on the bottom right part are still well isolated from the main \emph{normal} cluster.
 During reconstruction of the images, the decoded visualisation shows a clear difference to the input
 characteristics based on the position of the outlier images.
 As the PCA and the t-SNE and their joint effect is not optimised, it can not be excluded that this change
@@ -59,7 +65,7 @@ also an indication of a different model behavior.
 
 \begin{figure}[!ht]
     \centering
-    \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_bn_vgg19/20230525_045131_feature_vectors_1.png}
+    \includegraphics[width=\textwidth,trim={0 0 0 1cm},clip]{./results/vgg19_bn_vgg19/20230525_045131_feature_vectors_1.png}
     \caption{PCA / t-SNE visualization of the VGG19 (BN) Encoder}
     \label{fig:vgg19_bn_pca}
 \end{figure}
@@ -68,6 +74,11 @@ The loss values of the images show a very comparable series as the VGG19 model a
 \ref{fig:vgg19_bn_loss}.
 Emphasizing that the effect of the batch normalization can not be really identified through the
 comparison of the loss values.
+Most of the outliers are indicated with high loss values, especially the part with the \emph{double rail}
+cluster.
+On the other hand some outliers still \emph{hide} inside the loss values as it is not deviating from
+the others.
+An example for this is the first \emph{grass} outlier.
 
 \begin{figure}[!ht]
     \centering
@@ -80,20 +91,20 @@ Interestingly the confusion matrices deliver different results than without batc
 These matrices are shown on Figure \ref{fig:vgg19_bn_cm}
 The loss-based approach delivers almost exactly the same results, there is a slight change that can be
 captured in the increase of the true positive indications and thus on the reduction
-on the false indications (missed outliers).
+on the false positives (missed outliers).
 Applying the Isolation Forest algorithm on the bottleneck vectors shows a slight performance increase,
-the correct true predictions increased, whilst the false positive and missed outliers reduced.
-This reduction is significant in case of the false positive indications.
+the true positive predictions increased, whilst the false positive and true negative rate is reduced.
+This reduction is significant in case of the true negative indications.
 
 \begin{figure}[!ht]
     \centering
     \begin{subfigure}{0.4\textwidth}
         \centering
-        \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_bn_vgg19/20230525_045131_loss_based_cm.png}
+        \includegraphics[width=\textwidth]{./results/vgg19_bn_vgg19/20230525_045131_loss_based_cm.png}
     \end{subfigure}
     \begin{subfigure}{0.4\textwidth}
         \centering
-        \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_bn_vgg19/20230525_045131_isolation_forest_cm.png}
+        \includegraphics[width=\textwidth]{./results/vgg19_bn_vgg19/20230525_045131_isolation_forest_cm.png}
     \end{subfigure}
     \caption{Confusion Matrices of the VGG19 (BN) Encoder}
     \label{fig:vgg19_bn_cm}

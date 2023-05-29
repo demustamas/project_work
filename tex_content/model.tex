@@ -13,7 +13,7 @@ The general structure of Autoencoders are shown in Figure \ref{fig:autoencoder}.
 
 \begin{figure}[!ht]
     \centering
-    \includegraphics[width=0.6\textwidth]{./tex_images/autoencoder.jpeg}
+    \includegraphics[width=0.6\textwidth,trim={0 0 0 1cm},clip]{./tex_images/autoencoder.jpeg}
     \caption{General structure of Autoencoders \cite{khosla_auto_2021}}
     \label{fig:autoencoder}
 \end{figure}
@@ -34,8 +34,7 @@ Another introduction can be found at \cite{_autoencoder_2023}.
 During the research four type of Encoders used as listed below.
 
 \begin{itemize}
-    \item VGG19
-    \item VGG19 with batch normalization
+    \item VGG19 with and without batch normalization
     \item ResNet50
     \item EfficientNetV2L
 \end{itemize}
@@ -124,7 +123,7 @@ of the network, there only a random initialization was used.
 
 The loss function is defined as pixelwise mean squared loss between the original and replicated
 images.
-Adam optimizer is applied with a learning rate of $5e-6$.
+Adam optimizer is applied with a learning rate of $5 \cdot 10^{-6}$.
 The batch size for training is set to 8.
 
 The dataset is splitted to \emph{train}, \emph{validation} and \emph{test} set, considering the
