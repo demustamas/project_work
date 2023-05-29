@@ -2,12 +2,12 @@
 \subsection{Previous work}
 Current research started as part of the studies on the Mathematics Expert in
 Data Analytics and Machine Learning postgraduate specialization program \cite{_ai&ml_}
-held by the AI Research Group of Eötvös Loránd University \cite{_ai_}.
-During the one year program a thesis work has to be created that is often
-preceeded by a modeling practice in the first semester.
+held by the AI Research Group of Eötvös Lóránd University \cite{_ai_}.
+During the one-year program a thesis work has to be created that is often
+preceded by a modeling practice in the first semester.
 This project follows the same approach as railway track fault detection models
 were already built in the first semester.
-However the characteristics of the dataset used at that time did not allow a
+However, the characteristics of the dataset used at that time did not allow a
 successful application of a model however valuable experience is gained together
 with a boost of motivation to follow up the topic and deepen the knowledge in the
 mentioned problem.
@@ -39,7 +39,7 @@ different bootstrapped models on the splits of the dataset is given.
 
 Most of the models were successfully learned the features of the training and validation datasets,
 however on the test dataset all failed to classify the images in an acceptable level, mostly
-achieveing the level of a random classifier only.
+achieving the level of a random classifier only.
 This lead to the realization that the low number of images compared with the high variety of the track
 failures will result in a situation where the model can easily learn the specifics of the training and
 validation dataset preventing of any generalization to the test dataset.
@@ -54,7 +54,7 @@ for building such classifier model.
 
 The MÁV CRTI Ltd. was established in 1996 by MÁV Hungarian State Railways Co.
 The scope of the company covers the fields of technical inspection and analysis related
-ralway tracks, rails and corresponding structures:
+railway tracks, rails and corresponding structures:
 \begin{itemize}
     \item Geometric measurement of tracks and geometric condition survey
     \item Measurement, examination and qualification of railway rails
@@ -69,19 +69,19 @@ A comprehensive overview about the company, it's activities and history can be f
 
 The Rail Diagnostic Department carries out regular measurements on the railway tracks in order
 to determine the overall condition of the rails and thus ensuring the safety of railway operation.
-These inspections are carried out by special railway measurment equipment and inspection vehicles,
-Sstarting from the simplest visual inspections carried out by the maintenance personnel up to
+These inspections are carried out by special railway measurement equipment and inspection vehicles,
+Starting from the simplest visual inspections carried out by the maintenance personnel up to
 special ultrasonic examinations and rail profile measurements.
 With such equipment rail surface and internal defects can be detected and detailed information about
 the track profile can be obtained along hundreds of kilometers of railway tracks.
 
 The Rail Diagnostic Department already has some experience with machine learning based rail
 defect detection providing options for benchmarking the models created through this project.
-It also reflect the importance of such approach, as today visual inspection demands heavy efforts
-let that be the work done by the maintenance personnal (intrinsically walking along the tracks)
-or the monitoring of the video footages taken during the inspection rides.
+It also reflects the importance of such approach, as today visual inspection demands heavy efforts
+let that be the work done by the maintenance personnel (intrinsically walking along the tracks)
+or the monitoring of the video footage taken during the inspection rides.
 
-Currently MÁV CRTI Ltd. operates two vehicles for rail inspection purposes, the SDS and FMK-008 shown on
+Currently, MÁV CRTI Ltd. operates two vehicles for rail inspection purposes, the SDS and FMK-008 shown on
 Figure \ref{fig:vehicles}, both equipped with different measurement and inspection systems.
 Fortunately both of them is equipped with video recording, however with different systems.
 After a first view on the video files the system of the SDS vehicle is selected for a first modelling
@@ -108,7 +108,7 @@ During the first part of the project convolutional neural networks with classifi
 on annotated dataset.
 A step forward was taken by obtaining real world data, however this comes with the burden of
 missing labeling.
-Therefore the modeling approach was also changed from supervised learning to unsupervised learning.
+Therefore, the modeling approach was also changed from supervised learning to unsupervised learning.
 In this way the problem was reformulated and traced back to anomaly detection, thus resulting in the
 following key questions:
 

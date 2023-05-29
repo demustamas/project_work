@@ -4,7 +4,7 @@ The learning curves of the Autoencoder training is presented on Figure \ref{fig:
 The initial high loss values are reduced significantly during the first few epochs.
 The train and validation losses converge quite close to each other due to the fact that
 the train dataset (as the overall dataset itself) contains mostly \emph{normal} rail images.
-Also the variation of the curves are very small, the validation set represents well the training set.
+Also, the variation of the curves are very small, the validation set represents well the training set.
 The validation curve is slightly above the train losses, there is no sign of overfitting or abnormal
 training of the model.
 
@@ -15,7 +15,7 @@ training of the model.
     \label{fig:vgg19_learning_curve}
 \end{figure}
 
-After training some example images are predicted (encoded and decoded) to visualise the performance
+After training some example images are predicted (encoded and decoded) to visualize the performance
 of the Autoencoder.
 This is represented on Figure \ref{fig:vgg19_examples}.
 The sample autoencoded images show the main characteristics that is recorded by the model.
@@ -60,7 +60,7 @@ in the top right part, however slightly moved to the boundary of it.
 It can be also seen that after decoding these outliers are structured back to their original position
 in the visualization space.
 This indicates that the encoding is somehow clustering the dataset, whilst the decoding part readjusts
-this clustering back to it's origin, basically proving that the main idea of the Autoencoders is
+this clustering back to its origin, basically proving that the main idea of the Autoencoders is
 represented in the model.
 
 \begin{figure}[!ht]
@@ -77,9 +77,9 @@ The concentration of the outliers are also confirmed based on the video footage,
 of grass covered section can be seen, then in the second part a longer period of grass coverage
 with the appearance of the double rails is present in the video.
 It is to be noted that, for example in case of the first \emph{grass} image the loss value is not
-so well distinguishes the image from it's neighbouring images.
+so well distinguishes the image from its neighboring images.
 Similarly, but in the opposite direction, at some \emph{normal} pictures the loss value is significantly
-higher then the values of the preceeding or following images.
+higher than the values of the preceding or following images.
 This denotes that this approach most likely will not a perfect identification of the anomalies.
 
 \begin{figure}[!ht]

@@ -16,11 +16,11 @@ It is to be noted that the training was done in different dataset split ups for 
 \end{figure}
 
 The autoencoded images follow the same pattern as before, major features of the rail is regenerated,
-the details are concentrating to the center or brighter parts of the images,
+the details are concentrating in the center or brighter parts of the images,
 the main edge of the running surface of the rail and the side surface both can be identified.
 The representation of the ballast rocks also present.
 These are presented on Figure \ref{fig:resnet50_examples}.
-It can be concluded that the model learnt to encode the images to feature vectors and then the
+It can be concluded that the model learned to encode the images to feature vectors and then the
 decoding is also successful, however it has to be noted that the resulting image is far from complete.
 
 \begin{figure}[!ht]
@@ -41,18 +41,18 @@ decoding is also successful, however it has to be noted that the resulting image
     \label{fig:resnet50_examples}
 \end{figure}
 
-The PCA / t-SNE visualisation shows a little enhancement in the behviour of the model
+The PCA / t-SNE visualization shows a little enhancement in the behavior of the model
 on Figure \ref{fig:resnet50_pca}.
 The outliers of the input images are encoded in a way that they tend to separate from the
 major \emph{normal} cluster, even the ones that remained in this cluster are closer to the boundary
-as shown on the top right part of the encoded subfigure.
+as shown on the top right part of the encoded sub-figure.
 Even it can be seen that this region or the boundary is \emph{opening up} and the \emph{normal}
 images do not encompass these outliers so much.
 The bottom right concentration of the outliers are separating clearly with this model,
 as seen with the other models as well.
 The decoded images retain the clustering in a strict manner, compared to the distribution of the
 outliers on the input visualization, the decoded outliers form a more closed cluster.
-Some of the outliers (that usually have low loss values compared to the other anomalies) still
+Some outliers (that usually have low loss values compared to the other anomalies) still
 remain inside the \emph{normal} cluster through the whole model.
 
 \begin{figure}[!ht]
@@ -63,7 +63,7 @@ remain inside the \emph{normal} cluster through the whole model.
 \end{figure}
 
 The loss values depict the same variation over the images as seen for the VGG models,
-depcited on Figure \ref{fig:resnet50_loss}.
+depicted on Figure \ref{fig:resnet50_loss}.
 The majority of the outliers can be easily identified, although not all of them have a high loss value
 and some images with high loss values belong to the \emph{normal} rail class.
 The loss values do not indicate a difference between the models seen so far.
@@ -80,7 +80,7 @@ The confusion matrices can be seen on Figure \ref{fig:resnet50_cm}.
 The loss-based approach delivers the same performance as the threshold still too conservative,
 approximately \small \sfrac{2}{3} of the true positives identified correctly.
 The Isolation Forest algorithm identifies true positives in higher rate than the VGG19 without
-batch normalization, however the false positives remains on the level of a prue VGG19 model.
+batch normalization, however the false positives remain on the level of a pure VGG19 model.
 
 \begin{figure}[!ht]
     \centering

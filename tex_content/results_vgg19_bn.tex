@@ -1,14 +1,14 @@
 \subsection{Encoding via VGG19 with batch normalization}
 The batch normalization did not deliver a significant change to the characteristics of the learning
 curves as can be seen on Figure \ref{fig:vgg19_bn_learning_curve}.
-Similar obesrvations can be done as for the model without batch normalization.
+Similar observations can be done as for the model without batch normalization.
 After the first few epochs the loss values significantly decrease and continues getting reduced
 indicating that the model is capable to learn new features.
 The train and validation losses run quite close to each other due to the many very similar images,
-and indicating a good represenation capability of the train dataset.
+and indicating a good representation capability of the train dataset.
 No overfitting or training issues can be seen, however the validation loss curve seem to show
 slightly higher variance.
-At 100 epoch the loss value is slightly higher then it was with the VGG19 model.
+At 100 epoch the loss value is slightly higher than it was with the VGG19 model.
 The difference is minor, normally the batch normalization shall decrease the learning times of a model,
 however the resulting loss values highly depend on the weight initialization as well.
 In this case the initial validation loss was also higher at start compared to the pure VGG19 model
@@ -28,7 +28,7 @@ As basic feature, the main edge of the rail is also visible together with the si
 Smaller details such us outlines of ballast rocks are also captured to a certain extent.
 This shows that the introduction of batch normalization did not change significantly the quality of
 the decoded pictures.
-However still not recreating the whole image.
+However, still not recreating the whole image.
 
 \begin{figure}[!ht]
     \centering
@@ -51,16 +51,16 @@ However still not recreating the whole image.
 A more interesting change can be identified on the PCA / t-SNE visualization on the
 Figure \ref{fig:vgg19_bn_pca}.
 The change of the cluster follows the same character as without batch normalization, but the separation
-of the outliers happens in a different way.
+of the outliers happens differently.
 The outliers that were still part of the \emph{normal} cluster, close to the boundary, now show a more
 accented deviation based on their loss values as can be seen on the top right part of the encoded phase.
-But some outliers are stucked deeper inside the clusters of the \emph{normal} images.
+But some outliers are stuck deeper inside the clusters of the \emph{normal} images.
 This can be seen on the bottom left part of the encoded phase.
 The outliers on the bottom right part are still well isolated from the main \emph{normal} cluster.
-During reconstruction of the images, the decoded visualisation shows a clear difference to the input
+During reconstruction of the images, the decoded visualization shows a clear difference to the input
 characteristics based on the position of the outlier images.
-As the PCA and the t-SNE and their joint effect is not optimised, it can not be excluded that this change
-is resulting only from the visualisation technique, however we shall keep in mind, that this could be
+As the PCA and the t-SNE and their joint effect is not optimized, it can not be excluded that this change
+is resulting only from the visualization technique, however we shall keep in mind, that this could be
 also an indication of a different model behavior.
 
 \begin{figure}[!ht]

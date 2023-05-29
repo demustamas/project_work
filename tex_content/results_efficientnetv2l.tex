@@ -2,10 +2,10 @@
 Observing Figure \ref{fig:efficientnetv2l_learning_curve}, the learning curves of the
 EfficientNetV2L model, there is a change in the patterns seen among the other models.
 The curves are comparable in terms of general characteristics, the starting and resulting losses are
-comparable and the majority is reduced in the first few epochs.
+comparable, and the majority is reduced in the first few epochs.
 In detail however the variance of the validation losses do not show a further increase,
 it steadily follows the training curve.
-Also for this model there is no overfitting or any training issue detected, the training data
+Also, for this model there is no overfitting or any training issue detected, the training data
 seem to represent the whole dataset, this is supported by the validation curve.
 
 \begin{figure}[!ht]
@@ -15,9 +15,9 @@ seem to represent the whole dataset, this is supported by the validation curve.
     \label{fig:efficientnetv2l_learning_curve}
 \end{figure}
 
-The predicted images are similar to the ones seen before, the basic features are well grabbed and
+The predicted images are similar to the ones seen before, the basic features are well grabbed, and
 the details are focusing around the center or bright part of the images.
-The rail itself and ballast stones can be easily recognised, the model (same as for the other models)
+The rail itself and ballast stones can be easily recognized, the model (same as for the other models)
 captures the edges easily.
 The reconstructed images however still not deliver full pictures, loss of information due to
 incompleteness is assumed.
@@ -41,13 +41,13 @@ The sample images are presented on Figure \ref{fig:efficientnetv2l_examples}
     \label{fig:efficientnetv2l_examples}
 \end{figure}
 
-Reducing the dimensions to a plane results comparable characteristic behaviour as the other models
+Reducing the dimensions to a plane results comparable characteristic behavior as the other models
 as shown on Figure \ref{fig:efficientnetv2l_pca}.
 Although there are some differences that need to be noted.
 First, the outliers are captured and separated from the \emph{normal} cluster, especially on the
 bottom right part of the encoded view, however the separation is not as clear as was for example
 in case of the ResNet50 Encoder.
-Secondly the outliers that are stucked on the top right part of the encoded view inside the \emph{normal}
+Secondly the outliers that are stuck on the top right part of the encoded view inside the \emph{normal}
 cluster are now moved more to the boundary and even the \emph{normal} cluster is opened up better.
 After decoding back the images, the resulting feature plane shows that the outliers are placed back
 more concentrated to their original place indicating a certain loss of information
@@ -75,9 +75,9 @@ however some of those remain embedded and can not be retained with this method.
 
 The classification metrics as shown with the confusion matrices on Figure \ref{fig:efficientnetv2l_cm}
 present a similar performance of the loss-based approach,
-a little bit more than \small \sfrac{2}{3} of the outliers found.
+a little more than \small \sfrac{2}{3} of the outliers found.
 The Isolation Forest delivers one of the best true positive indications,
-but on the cost of worst false negative rate.
+but on the cost of the worst false negative rate.
 
 \begin{figure}[!ht]
     \centering
