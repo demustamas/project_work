@@ -177,8 +177,10 @@ A simulation of the threshold value is shown on Figure \ref{fig:threshold_simula
 The threshold is defined as the multiplication of the standard deviation of the losses of the images.
 The limit value is the loss mean and the multiplied standard deviation added.
 Above this value the image is considered as outlier.
-The optimum in terms if \emph{F1 score} is between $2.0$ and $2.5$ times the standard deviation added
+The optimum in terms of \emph{F1 score} is between $2.07$ and $2.24$ times the standard deviation added
 to the mean of losses.
+Such optimum gives a balance between precision and recall, indicating how well the anomalies found,
+quantifying how much is found considering the false negative hits.
 Further optimization possibilities, more decent modeling, more refined loss calculation is possible
 to enhance the performance of the models.
 
@@ -205,3 +207,82 @@ to enhance the performance of the models.
 \end{figure}
 
 \subsection{Detected anomalies}
+To understand the learning capability of the Autoencoder, together with the anomaly detection
+performance a visual analysis of the predicted or misclassified outliers is done.
+The threshold for the loss-based approach was set to $2.15$ for all models.
+A comparison of identified outliers is shown on Figure \ref{fig:outlier_comparison}.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=\textwidth]{./results/comparison/outlier_comparison.png}
+    \caption{Comparison of identified outliers of different models}
+    \label{fig:outlier_comparison}
+\end{figure}
+
+The loss-based approach concentrates clearly on the clusters on the three main clusters of the
+outliers, examples are shown on Figure \ref{fig:outlier_cluster_exampels}.
+From a practical perspective, this already narrows down the search that has to be done on a full
+video footage.
+The Isolation Forest delivers also a good marking, almost all captures the three main clusters,
+except the \emph{VGG19}, that misses the second cluster.
+On the other hand, this approach delivers much higher rate of false positives.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{./data/sd1_sample/grass/img_00345.jpg}
+        \caption*{Cluster 1}
+    \end{subfigure}
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{./data/sd1_sample/grass/img_00975.jpg}
+        \caption*{Cluster 2}
+    \end{subfigure}
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{./data/sd1_sample/grass/img_05666.jpg}
+        \caption*{Cluster 3}
+    \end{subfigure}
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{./data/sd1_sample/double_rail/img_05677.jpg}
+        \caption*{Cluster 3}
+    \end{subfigure}
+    \caption{Examples of the three outlier clusters}
+    \label{fig:outlier_cluster_exampels}
+\end{figure}
+
+From Figure \ref{fig:outlier_comparison} it can be seen that there are three false positive
+indications resulting from almost all models at frame number $163$, $707$ and $7573$.
+These are presented on Figure \ref{fig:false_positives}.
+The samples indicate the presence of some grass or significant amount of ballast rocks
+covering even the sleepers.
+Deeper investigations on the reproduced output images reveal that the Autoencoder is
+very sensitive to the presence of edges (please refer for example to Figure
+\ref{fig:efficientnetv2l_examples}).
+Such edges are resulting mostly from grass, therefore a small amount might be enough
+to increase the probability of an outlier indication.
+On the other hand, the lack of sleeper is removing some features from the decoded images,
+providing a more homogeneous image, that might be misinterpreted by the anomaly detector.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{./data/sd1_sample/normal/img_00163.jpg}
+        \caption*{Frame no. 163}
+    \end{subfigure}
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{./data/sd1_sample/normal/img_00707.jpg}
+        \caption*{Frame no. 707}
+    \end{subfigure}
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{./data/sd1_sample/normal/img_07573.jpg}
+        \caption*{Frame no. 7573}
+    \end{subfigure}
+    \caption{Remarkable false positives}
+    \label{fig:false_positives}
+\end{figure}
