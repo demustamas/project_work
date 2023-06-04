@@ -8,7 +8,7 @@ it steadily follows the training curve.
 Also, for this model there is no overfitting or any training issue detected, the training data
 seem to represent the whole dataset, this is supported by the validation curve.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth,trim={0 0 0 1cm},clip]{./results/efficientnetv2l_vgg19/20230525_194238_results.png}
     \caption{Learning curve of the EfficientNetV2L Encoder}
@@ -23,7 +23,7 @@ The reconstructed images however still not deliver full pictures, loss of inform
 incompleteness is assumed.
 The sample images are presented on Figure \ref{fig:efficientnetv2l_examples}
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \begin{subfigure}{\textwidth}
         \centering
@@ -53,9 +53,9 @@ After decoding back the images, the resulting feature plane shows that the outli
 more concentrated to their original place indicating a certain loss of information
 and generalization of the model.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth,trim={0 0 0 1cm},clip]{./results/efficientnetv2l_vgg19/20230525_194238_feature_vectors_1.png}
+    \includegraphics[width=0.8\textwidth,trim={0 0 0 1cm},clip]{./results/efficientnetv2l_vgg19/20230525_194238_feature_vectors_1.png}
     \caption{PCA / t-SNE visualization of the EfficientNetV2L Encoder}
     \label{fig:efficientnetv2l_pca}
 \end{figure}
@@ -66,7 +66,7 @@ The loss metric alone is not necessarily indicates the performance of these anom
 Most of the outliers can be found by comparing the loss values with a given threshold,
 however some of those remain embedded and can not be retained with this method.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/efficientnetv2l_vgg19/20230525_194238_feature_vectors_loss.png}
     \caption{Loss values of the dataset with EfficientNetV2L encoding}
@@ -79,7 +79,7 @@ a little more than \small \sfrac{2}{3} of the outliers found.
 The Isolation Forest delivers one of the best true positive indications,
 but on the cost of the worst false negative rate.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \begin{subfigure}{0.4\textwidth}
         \centering

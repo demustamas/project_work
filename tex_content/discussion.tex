@@ -12,7 +12,7 @@ was done with the same parameter setting and no hyperparameter optimization was 
 Current remarks serve only to understand the model behavior and outline possible future
 improvement options.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{./results/comparison/learning_curves.png}
     \caption{Learning curve comparison of different encoders}
@@ -27,7 +27,7 @@ The resulting value is quite close for each model, reaching a value around $0.02
 Similar behavior is observed on the \emph{validation} dataset, the noticeable
 difference is the gradient of the curve, which in this case shows a less smooth evolution.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{./results/comparison/stdevs.png}
     \caption{Standard deviation of learning curves}
@@ -85,9 +85,9 @@ This is shown on Figure \ref{fig:efficientnetv2l_pca2},
 that colors the markers in the sequence as it can be seen in the video footage.
 The visualization in this case was done using the EfficientNetV2L model.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/efficientnetv2l_vgg19/20230525_194238_feature_vectors_2.png}
+    \includegraphics[width=0.8\textwidth,trim={0 1cm 0 1cm},clip]{./results/efficientnetv2l_vgg19/20230525_194238_feature_vectors_2.png}
     \caption{PCA / t-SNE representation of the sequence of the video images}
     \label{fig:efficientnetv2l_pca2}
 \end{figure}
@@ -100,7 +100,7 @@ The Isolation Forest results highly depend on the structure of the model and res
 The calculated classification metrics are shown in Table \ref{table:classification_metrics},
 where LB refers to loss-based and IF refers to Isolation Forest method.
 
-\begin{table}[!ht]
+\begin{table}[H]
     \centering
     \begin{tabular}{l c |c c| c c}
         Encoder type    & True values & \multicolumn{2}{c|}{Loss-based}  & \multicolumn{2}{c}{Isolation Forest}                \\
@@ -147,7 +147,7 @@ monitoring) that needs to be done, therefore due to economic reasons shall be re
 Based on the selected metrics the best performance is reached by the loss-based approaches,
 however still not reaching an acceptable rate of \emph{Recall}.
 
-\begin{table}[!ht]
+\begin{table}[H]
     \centering
     \begin{tabular}{l | c c | c c | c c | c c}
                         & \multicolumn{2}{c|}{VGG19} & \multicolumn{2}{c|}{VGG19 BN} & \multicolumn{2}{c|}{ResNet50} & \multicolumn{2}{c}{EfficientNetV2L}                                           \\
@@ -184,7 +184,7 @@ quantifying how much is found considering the false negative hits.
 Further optimization possibilities, more decent modeling, more refined loss calculation is possible
 to enhance the performance of the models.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \begin{subfigure}{0.48\textwidth}
         \centering
@@ -212,7 +212,7 @@ performance a visual analysis of the predicted or misclassified outliers is done
 The threshold for the loss-based approach was set to $2.15$ for all models.
 A comparison of identified outliers is shown on Figure \ref{fig:outlier_comparison}.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{./results/comparison/outlier_comparison.png}
     \caption{Comparison of identified outliers of different models}
@@ -227,7 +227,7 @@ The Isolation Forest delivers also a good marking, almost all captures the three
 except the \emph{VGG19}, that misses the second cluster.
 On the other hand, this approach delivers much higher rate of false positives.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \begin{subfigure}{0.48\textwidth}
         \centering
@@ -266,7 +266,7 @@ to increase the probability of an outlier indication.
 On the other hand, the lack of sleeper is removing some features from the decoded images,
 providing a more homogeneous image, that might be misinterpreted by the anomaly detector.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \begin{subfigure}{0.48\textwidth}
         \centering

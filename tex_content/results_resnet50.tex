@@ -8,7 +8,7 @@ The validation curve follows the training curve, supporting that the training da
 is representative to the whole dataset.
 It is to be noted that the training was done in different dataset split ups for all models.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth,trim={0 0 0 1cm},clip]{./results/resnet50_vgg19/20230514_213740_results.png}
     \caption{Learning curve of the ResNet50 Encoder}
@@ -23,7 +23,7 @@ These are presented on Figure \ref{fig:resnet50_examples}.
 It can be concluded that the model learned to encode the images to feature vectors and then the
 decoding is also successful, however it has to be noted that the resulting image is far from complete.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \begin{subfigure}{\textwidth}
         \centering
@@ -55,9 +55,9 @@ outliers on the input visualization, the decoded outliers form a more closed clu
 Some outliers (that usually have low loss values compared to the other anomalies) still
 remain inside the \emph{normal} cluster through the whole model.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth,trim={0 0 0 1cm},clip]{./results/resnet50_vgg19/20230514_213740_feature_vectors_1.png}
+    \includegraphics[width=0.8\textwidth,trim={0 0 0 1cm},clip]{./results/resnet50_vgg19/20230514_213740_feature_vectors_1.png}
     \caption{PCA / t-SNE visualization of the ResNet50 Encoder}
     \label{fig:resnet50_pca}
 \end{figure}
@@ -68,7 +68,7 @@ The majority of the outliers can be easily identified, although not all of them 
 and some images with high loss values belong to the \emph{normal} rail class.
 The loss values do not indicate a difference between the models seen so far.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/resnet50_vgg19/20230514_213740_feature_vectors_loss.png}
     \caption{Loss values of the dataset with ResNet50 encoding}
@@ -82,7 +82,7 @@ approximately \small \sfrac{2}{3} of the true positives identified correctly.
 The Isolation Forest algorithm identifies true positives in higher rate than the VGG19 without
 batch normalization, however the false positives remain on the level of a pure VGG19 model.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \begin{subfigure}{0.4\textwidth}
         \centering

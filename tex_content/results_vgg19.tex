@@ -8,7 +8,7 @@ Also, the variation of the curves are very small, the validation set represents 
 The validation curve is slightly above the train losses, there is no sign of overfitting or abnormal
 training of the model.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth,trim={0 0 0 1cm},clip]{./results/vgg19_vgg19/20230510_172958_results.png}
     \caption{Learning curve of the VGG19 Encoder}
@@ -26,7 +26,7 @@ Even the ballast stones can be recognized demonstrating the power behind such mo
 It is to be noted that the reproduced image is not fully complete,
 the more towards the image edge, the more black areas given resulting in high loss of information.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \begin{subfigure}{\textwidth}
         \centering
@@ -63,9 +63,9 @@ This indicates that the encoding is somehow clustering the dataset, whilst the d
 this clustering back to its origin, basically proving that the main idea of the Autoencoders is
 represented in the model.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth,trim={0 0 0 1cm},clip]{./results/vgg19_vgg19/20230510_172958_feature_vectors_1.png}
+    \includegraphics[width=0.8\textwidth,trim={0 0 0 1cm},clip]{./results/vgg19_vgg19/20230510_172958_feature_vectors_1.png}
     \caption{PCA / t-SNE visualization of the VGG19 Encoder}
     \label{fig:vgg19_pca}
 \end{figure}
@@ -82,7 +82,7 @@ Similarly, but in the opposite direction, at some \emph{normal} pictures the los
 higher than the values of the preceding or following images.
 This denotes that this approach most likely will not a perfect identification of the anomalies.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_vgg19/20230510_172958_feature_vectors_loss.png}
     \caption{Loss values of the dataset with VGG19 encoding}
@@ -99,7 +99,7 @@ of increasing the false positive rate, lowering this threshold might be useful.
 The Isolation Forest gives slightly different results, finding approximately half of the outliers,
 and providing some number of false positives.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \begin{subfigure}{0.4\textwidth}
         \centering
