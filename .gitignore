@@ -26,3 +26,16 @@ build/project_work.run.xml
 build/project_work.synctex.gz
 build/project_work.toc
 .vscode/
+build/project_work_pres.aux
+build/project_work_pres.bbl
+build/project_work_pres.bcf
+build/project_work_pres.blg
+build/project_work_pres.fdb_latexmk
+build/project_work_pres.fls
+build/project_work_pres.log
+build/project_work_pres.nav
+build/project_work_pres.out
+build/project_work_pres.run.xml
+build/project_work_pres.snm
+build/project_work_pres.synctex.gz
+build/project_work_pres.toc
