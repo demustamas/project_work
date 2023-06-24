@@ -130,48 +130,44 @@
 \end{frame}
 
 \section{Model description}
-\begin{frame}{Model selection}
-    \begin{figure}[t]
-        \centering
-        \includegraphics[width=0.45\textwidth,trim={0 0 0 1cm},clip]{./tex_images/autoencoder.jpeg}
-        \caption*{General structure of Autoencoders}
-    \end{figure}
-    \begin{columns}[T]
-        \begin{column}{0.25\textwidth}
-            Encoders:
-            \begin{itemize}
-                \item VGG19 (BN)
-                \item ResNet50
-                \item EfficientNetV2L
-            \end{itemize}
-        \end{column}
-        \begin{column}{0.25\textwidth}
-            \centering
-            Bottleneck
-
-            Filter matching
-        \end{column}
-        \begin{column}{0.25\textwidth}
-            Decoder:
-            \begin{itemize}
-                \item Inverse VGG19
-            \end{itemize}
-        \end{column}
-    \end{columns}
-\end{frame}
-
-\begin{frame}[t]{Anomaly detection}
-    \begin{columns}[T]
+\begin{frame}[t]{Model structure}
+    \begin{columns}[c]
         \begin{column}{0.45\textwidth}
-            Loss-based
+            \begin{figure}[t]
+                \centering
+                \includegraphics[width=\columnwidth,trim={0 0 0 1cm},clip]{./tex_images/autoencoder.jpeg}
+            \end{figure}
         \end{column}
         \begin{column}{0.45\textwidth}
-            Isolation Forest
+            \begin{tabular}{l l}
+                Encoders: & VGG19 (BN)      \\
+                          & ResNet50        \\
+                          & EfficientNetV2L \\
+                Decoder:  & Inverse VGG19   \\
+            \end{tabular}
         \end{column}
     \end{columns}
+
+    \pause
+    \vspace*{\fill}
+    Anomaly detection
+    \begin{itemize}
+        \item Loss between input and output exceeds a certain limit
+        \item Isolation forest algorithm on the bottleneck vectors
+    \end{itemize}
+
+    Additional layers added between Bottleneck and Decoder to match output size
 \end{frame}
 
 \section{Results}
+\begin{frame}{Learning curves}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth]{./results/comparison/learning_curves.png}
+        \caption*{Learning curve comparison of different encoders}
+    \end{figure}
+\end{frame}
+
 \begin{frame}[t]{Reconstructed images}
     \begin{columns}
         \begin{column}{0.2\textwidth}
@@ -235,6 +231,7 @@
                 \caption*{VGG19}
             \end{figure}
         \end{column}
+        \pause
         \begin{column}{0.45\textwidth}
             \begin{figure}
                 \centering
@@ -287,14 +284,6 @@
 \end{frame}
 
 \section{Discussion}
-\begin{frame}{Learning curves}
-    \begin{figure}
-        \centering
-        \includegraphics[width=\textwidth]{./results/comparison/learning_curves.png}
-        \caption*{Learning curve comparison of different encoders}
-    \end{figure}
-\end{frame}
-
 \begin{frame}{Loss-based threshold}
     \begin{columns}
         \begin{column}{0.45\textwidth}
