@@ -2,7 +2,12 @@
 {
     \useoutertheme{infolines}
 	\setbeamertemplate{navigation symbols}{}
-}
+    \renewcommand{\footnotesize}{\tiny}
+    \renewcommand{\@makefnmark}{\hbox{\textsuperscript{\tiny{\@thefnmark}}}}
+    }
+
+% Text positioning
+\usepackage[absolute,overlay]{textpos}
 
 % Page layout
 \usepackage{geometry}
