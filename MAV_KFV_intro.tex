@@ -143,7 +143,73 @@
 \end{frame}
 
 \begin{frame}{Anomália keresés}
+    \begin{figure}
+        \centering
+        \begin{subfigure}{0.2\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{./tex_images/gigant_2.jpg}
+        \end{subfigure}
+        \begin{subfigure}{0.4\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{./tex_images/autoencoder.png}
+        \end{subfigure}
+        \begin{subfigure}{0.2\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{./tex_images/gigant_2.jpg}
+        \end{subfigure}
+        \caption*{Autoencoder\footnotemark}
+    \end{figure}
+    \begin{itemize}
+        \setlength{\itemindent}{8em}
+        \item [Encoder - Decoder:] A modell tanulja meg a \emph{szokásos} képeket, hibázzon a \emph{szokatlannál}
+        \item [Bottleneck:] A látens tér elemei között mért távolság alapján
+    \end{itemize}
+    \footnotetext{\href{https://wikidocs.net/165345}{https://wikidocs.net/165345},
+        \href{https://iho.hu/hirek/eledezik-a-nyolcas-gigant-130321}{https://iho.hu/hirek/eledezik-a-nyolcas-gigant-130321}}
+\end{frame}
 
+\begin{frame}{Mit tekintünk anomáliának?}
+    \begin{figure}
+        \centering
+        \begin{subfigure}{0.3\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{./data/sd1_sample/normal/img_00006.jpg}
+            \caption*{\emph{Szokásos} sín}
+        \end{subfigure}
+        \begin{subfigure}{0.3\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{./data/sd1_sample/normal/img_00723.jpg}
+            \caption*{\emph{Szokásos} sín}
+        \end{subfigure}
+        \begin{subfigure}{0.3\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{./data/sd1_sample/normal/img_04857.jpg}
+            \caption*{\emph{Szokásos} sín}
+        \end{subfigure}
+        \begin{subfigure}{0.3\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{./data/sd1_sample/grass/img_05649.jpg}
+            \caption*{Fűcsomó}
+        \end{subfigure}
+        \begin{subfigure}{0.3\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{./data/sd1_sample/double_rail/img_05676.jpg}
+            \caption*{Terelősín}
+        \end{subfigure}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Mire képes az Autoencoder?}
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=\columnwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_vgg19/20230510_172958_predict_0.png}
+    \end{figure}
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=\columnwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_bn_vgg19/20230525_045131_predict_0.png}
+    \end{figure}
 \end{frame}
 
 \begin{frame}
