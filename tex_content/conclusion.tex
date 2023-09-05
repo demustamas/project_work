@@ -1,1 +1,65 @@
 \section{Conclusion} \label{conclusion}
+In current study an application of an Autoencoder as anomaly detector is presented.
+The model is trained and evaluated of real life sample data provided by MÁV CRTI Ltd.
+Four different models were built depending on the applied Encoder.
+The anomaly detection is performed based on the loss values defined between input
+and output images and based on the Isolation Forest algorithm applied to the bottleneck
+vectors.
+Performance evaluation covered visual check of the outliers, evaluation of classification
+metrics, that was granted via manual annotation of the sample data.
+The performance of the model is visualized via application of PCA and t-SNE algorithms that
+provided an insight view how features are translated through the models.
+
+The results highlighted that such models can be very effective on finding outliers
+in a given dataset, however the following remarks have to be noted for the sake of completeness:
+
+\begin{itemize}
+      \item The sample dataset is limited in terms of variation, the video footage shows
+            mostly the same side view of a \emph{normal} rail with two type of outliers:
+            \emph{grass covered} and presence of \emph{double rails} which are very seldom found.
+      \item The outliers differ from the normal images significantly and are concentrated to
+            three main clusters in the dataset.
+      \item There was no preprocessing of the images except resizing and normalization.
+      \item The training of the neural networks is limited, there was no hyperparameter
+            optimization done.
+      \item The anomaly detection methods were also not optimized for the dataset.
+\end{itemize}
+
+Even though of these limitations the results of the models are remarkable, especially the
+loss-based method provided good results: an indication of the three main outlier clusters.
+In current use case it is vital to identify as many outliers as possible to ensure railway
+operation safety.
+On the other hand it is economically reasonable to limit the false positives to a minimum
+to ensure efficient review of the results.
+However, in real life application the task is not to identify grass near the rails or double rail
+construction, much finer outliers need to be detected: surface issues of the rail running surface
+or missing parts of the rail fastening.
+This highlights the possible limitations of the current model.
+On the other hand this draws the attention to additional use cases coupled to this challenge.
+The model might be able to classify the images to main rail construction groups, for example
+separate the images to normal rails, turnouts, bridges, ballast covered track, etc.
+Later on a more refined model can be used on these groups for anomaly detection.
+
+The hope is not yet lost due to the many options present to improve our model.
+A shortlist of these improvements is listed below:
+\begin{itemize}
+      \item Apply image preprocessing, like CLAHE histogram equalization to boost the learning
+            capability of the neural networks.
+      \item Optimize parameters of the neural network to fit to given problem and dataset.
+      \item Besides classification, segment the images and detect major elements of the track,
+            such as rails, fastening elements to limit the anomaly detection to major parts.
+      \item Introduce further anomaly detector algorithms, for example One Class SVM or apply
+            deep learning methods to obtain better kernels.
+      \item Loss calculation can be refined to match better to the input and output images.
+\end{itemize}
+
+Before venturing to further improvements the opportunity is given to understand deeper how the
+model works.
+We have seen characteristic changes on the PCA / t-SNE representation.
+This representation can be further tuned and extended with different approaches to visualize behavior
+of the dataset de- and recomposition capability of the model.
+Furthermore, analysis of the latent space is not yet exhausted, introduction of pairwise distance
+calculation might reveal more information on the abstract representation of the images.
+And last but not least, as further video footage is available we can obtain additional information
+from real life videos that might deliver further information and guidance how the problem could
+be tackled by machine learning approach.

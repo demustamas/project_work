@@ -1,12 +1,12 @@
 \section{Software implementation} \label{sw_code}
-The project is written in Python language partially in python sripts directly,
+The project is written in Python language partially in python scripts directly,
 partially in Jupyter notebooks.
 The documentation is created in \LaTeX.
 The overall software code is stored at \url{https://github.com/demustamas/project_work}.
-Due to storage limitations the trained modelfiles and the original dataset is not uploaded to GitHub.
+Due to storage limitations the trained model files and the original dataset is not uploaded to GitHub.
 The basic folder and file structure is as follows:
 
-\begin{enumerate}
+\begin{itemize}
     \item \lstinline{./build} - Build directory of \LaTeX, contains project documentation
     \item \lstinline{./data} - Contains the dataset (not available on GitHub)
     \item \lstinline{./results} - Contains resulting models, images, tables
@@ -15,12 +15,12 @@ The basic folder and file structure is as follows:
     \item \lstinline{./tex_refs} - Style files, bibliography
     \item \lstinline{./toolkit} - Contains main scripts
     \item \lstinline{./toolkit/classes.py} - Class definitions for loading the dataset
-    \item \lstinline{./toolkit/pytorch_tools.py} - Class definitions for Pytorch
+    \item \lstinline{./toolkit/pytorch_tools.py} - Class definitions for PyTorch
     \item \lstinline{./project_work.ipynb} - Jupyter notebook project file
     \item \lstinline{./project_work.tex} - Main \LaTeX documentation file
     \item \lstinline{./project_work_pres.tex} - Final presentation of the project
     \item \lstinline{./video_slicer.ipynb} - Jupyter notebook used for slicing the videos to images
-\end{enumerate}
+\end{itemize}
 
 The raw video files (binary files) were sliced using the \lstinline{video_slicer.ipynb}.
 The anomaly detection is then performed by \lstinline{project_work.ipynb} and the results,
@@ -34,5 +34,5 @@ These contain the class definitions used to import the dataset, define the model
 of the Autoencoder and AnomalyDetector with the corresponding methods used for training,
 predicting and evaluating the results.
 
-The scripts are prepared to run either on CPU or on GPU, depending on the available IT infratsructure.
+The scripts are prepared to run either on CPU or on GPU, depending on the available IT infrastructure.
 The computation expensive steps were run on the servers of AI Research Group of Eötvös Lóránd University.

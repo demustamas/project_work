@@ -1,8 +1,16 @@
+\@ifclassloaded{beamer}
+{
+    \useoutertheme{infolines}
+	\setbeamertemplate{navigation symbols}{}
+    \renewcommand{\footnotesize}{\tiny}
+    \renewcommand{\@makefnmark}{\hbox{\textsuperscript{\tiny{\@thefnmark}}}}
+    }
+
+% Text positioning
+\usepackage[absolute,overlay]{textpos}
+
 % Page layout
-\usepackage[
-    a4paper,
-    margin=1in
-]{geometry}
+\usepackage{geometry}
 
 % Language support
 \usepackage{t1enc}
@@ -24,15 +32,12 @@
 % Itemize with letters
 \usepackage{enumitem}
 
+% Nice fractions
+\usepackage{xfrac}
+
 % Headers and footers
 \usepackage{lastpage}
 \usepackage{fancyhdr}
-\pagestyle{fancy}
-
-\fancyhf{}
-\fancyhead[R]{\leftmark}
-\fancyhead[L]{Railway Track Fault Detection}
-\fancyfoot[R]{\thepage\ / \pageref*{LastPage}}
 
 % Version history
 \usepackage[
@@ -57,6 +62,10 @@
 }
 
 % Figures
+\usepackage{float}
 \usepackage{graphicx}
 \usepackage{caption}
 \usepackage{subcaption}
+
+% Drawing
+\usepackage{tikz}
