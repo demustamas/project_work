@@ -200,16 +200,88 @@
 \end{frame}
 
 \begin{frame}{Mire képes az Autoencoder?}
-
     \begin{figure}
         \centering
-        \includegraphics[width=\columnwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_vgg19/20230510_172958_predict_0.png}
+        \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_vgg19/20230510_172958_predict_0.png}
     \end{figure}
-
     \begin{figure}
         \centering
-        \includegraphics[width=\columnwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_bn_vgg19/20230525_045131_predict_0.png}
+        \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_bn_vgg19/20230525_045131_predict_0.png}
     \end{figure}
+\end{frame}
+
+\begin{frame}{Encoder - Decoder}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth,trim={0 0 0 1cm},clip]{./results/vgg19_vgg19/20230510_172958_feature_vectors_loss.png}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Bottleneck}
+    \begin{figure}
+        \centering
+        \includegraphics[height=0.8\textheight,trim={0 0 0 1cm},clip]{./results/vgg19_vgg19/20230510_172958_feature_vectors_1.png}
+        \caption*{VGG19}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Eredmények}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.9\textwidth]{./results/comparison/outlier_comparison.png}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Anomáliák}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_vgg19_MAV/20230510_172958_predict_0.png}
+    \end{figure}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_vgg19_MAV/20230510_172958_predict_1.png}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Anomáliák}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_vgg19_MAV/20230510_172958_predict_2.png}
+    \end{figure}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_vgg19_MAV/20230510_172958_predict_3.png}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Fals pozitívak}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_vgg19_MAV/20230510_172958_predict_4.png}
+    \end{figure}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_vgg19_MAV/20230510_172958_predict_5.png}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Fals pozitívak}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth,trim={0 1cm 0 1cm},clip]{./results/vgg19_vgg19_MAV/20230510_172958_predict_6.png}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Lehetőségek}
+    \begin{itemize}
+        \item Komplexebb modellek alkalmazása
+        \item Modell inicializálás és tanítás optimálása
+        \item Hiperparaméterek optimalizálása
+        \item További anomáliakereső algoritmusok alkalmazása
+        \item Modellek kombinálása
+        \item Képfeldolgozási módszerek használata
+        \item Probléma lokalizációja képszegmentálással
+    \end{itemize}
 \end{frame}
 
 \begin{frame}
